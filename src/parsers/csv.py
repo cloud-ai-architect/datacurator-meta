@@ -1,4 +1,4 @@
-"""CSV / TSV parser using pandas.
+"""CSV / TSV parser using stdlib csv (no external deps).
 
 Converts tabular data into a text representation suitable for chunking.
 We render the CSV as both:
@@ -8,10 +8,10 @@ We render the CSV as both:
 
 from __future__ import annotations
 
+import csv
 import io
 import time
-
-import pandas as pd
+from typing import Any
 
 from src.common import (
     DataCuratorModel,
@@ -23,13 +23,15 @@ from src.common import (
     stage,
 )
 
+MAX_ROWS = 500
+MAX_COL_WIDTH = 80
+
 
 @stage(name="parse-csv", input_model=DataCuratorModel, output_model=ParsedDocument)
 class CsvParser(BaseLambda):
-    """Parse CSV/TSV into text + structured elements."""
+    """Parse CSV/TSV into text + structured elements (stdlib only)."""
 
     def setup(self) -> None:
-        # pandas imported lazily
         pass
 
     def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:  # type: ignore[override]
@@ -39,30 +41,61 @@ class CsvParser(BaseLambda):
 
         try:
             response = self.s3.get_object(Bucket=bucket, Key=key)
-            body = response["Body"].read()
+            body = response["Body"].read().decode("utf-8", errors="replace")
 
-            # Auto-detect separator
+            # Auto-detect separator: TSV if .tsv, otherwise CSV
             separator = "\t" if key.lower().endswith(".tsv") else ","
+            # Sniff for delimiter if ambiguous (CSV with tabs, etc.)
+            if separator == "," and "\t" in body.splitlines()[0] if body.splitlines() else False:
+                separator = "\t"
 
-            df = pd.read_csv(io.BytesIO(body), sep=separator, dtype=str, keep_default_na=False)
+            reader = csv.reader(io.StringIO(body), delimiter=separator)
+            rows = list(reader)
+            if not rows:
+                raise ParseError(f"Empty CSV file: s3://{bucket}/{key}")
 
-            # Render as markdown table (truncate for huge files)
-            md_table = df.head(500).to_markdown(index=False)
+            headers = [h.strip() for h in rows[0]]
+            data_rows = rows[1 : MAX_ROWS + 1]
+            truncated = len(rows) - 1 > MAX_ROWS
+
+            # Render as markdown table
+            md_table_lines = [
+                "| " + " | ".join(self._truncate(h) for h in headers) + " |",
+                "| " + " | ".join(["---"] * len(headers)) + " |",
+            ]
+            for row in data_rows:
+                # Pad short rows, truncate long rows
+                cells = [self._truncate(self._cell(row, i, headers)) for i in range(len(headers))]
+                md_table_lines.append("| " + " | ".join(cells) + " |")
+            md_table = "\n".join(md_table_lines)
 
             # Render as row-by-row prose for better recall
             prose_parts: list[str] = []
-            for _, row in df.head(500).iterrows():
-                row_text = " | ".join(f"{col}: {val}" for col, val in row.items() if val)
+            for row in data_rows:
+                row_text = " | ".join(
+                    f"{headers[i] if i < len(headers) else f'col{i+1}'}: {self._cell(row, i, headers)}"
+                    for i in range(len(row))
+                    if self._cell(row, i, headers)
+                )
                 if row_text:
                     prose_parts.append(row_text)
 
-            text_content = f"# CSV Data\n\n{md_table}\n\n## Row-by-row\n\n" + "\n".join(prose_parts)
+            text_content = (
+                f"# CSV Data ({len(data_rows)}{'+' if truncated else ''} of {len(rows)-1} rows)\n\n"
+                f"{md_table}\n\n## Row-by-row\n\n"
+                + "\n".join(prose_parts)
+            )
 
             elements = [
                 StructuredElement(
                     element_type="table",
                     text=md_table,
-                    metadata={"row_count": len(df), "column_count": len(df.columns), "columns": list(df.columns)},
+                    metadata={
+                        "row_count": len(data_rows),
+                        "column_count": len(headers),
+                        "columns": headers,
+                        "truncated": truncated,
+                    },
                     position=0,
                 )
             ]
@@ -70,8 +103,8 @@ class CsvParser(BaseLambda):
             parse_duration_ms = int((time.perf_counter() - start) * 1000)
 
             warnings: list[str] = []
-            if len(df) > 500:
-                warnings.append(f"truncated_to_500_rows (full={len(df)})")
+            if truncated:
+                warnings.append(f"truncated_to_{MAX_ROWS}_rows (full={len(rows) - 1})")
 
             return ParsedDocument(
                 job_id=ctx.job_id,
@@ -81,8 +114,17 @@ class CsvParser(BaseLambda):
                 page_count=None,
                 language=None,
                 parse_duration_ms=parse_duration_ms,
-                parser_version=f"pandas-{pd.__version__}",
+                parser_version="stdlib-csv-3.12",
                 warnings=warnings,
             )
         except Exception as exc:
             raise ParseError(f"Failed to parse CSV s3://{bucket}/{key}: {exc}") from exc
+
+    def _cell(self, row: list[str], idx: int, headers: list[str]) -> str:
+        """Get cell value, padding with empty string if row is short."""
+        return row[idx].strip() if idx < len(row) else ""
+
+    def _truncate(self, s: str) -> str:
+        """Truncate a string to fit table column width."""
+        s = s.replace("|", "\\|").replace("\n", " ")
+        return s[:MAX_COL_WIDTH] + "…" if len(s) > MAX_COL_WIDTH else s

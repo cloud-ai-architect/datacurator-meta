@@ -1,4 +1,7 @@
-"""Lambda handler for the Redact stage."""
+"""Lambda handler for the Redact stage.
+
+The Step Function Map state wraps each chunk in {"chunk": {...}}.
+"""
 
 from __future__ import annotations
 
@@ -9,17 +12,7 @@ from src.redactor import PiiRedactor
 
 
 def handler(event: dict, context: object) -> dict:
-    """Handle a Step Function invocation for PII redaction.
-
-    Event shape (single chunk from Map state):
-        {
-            "chunk_id": "...",
-            "job_id": "...",
-            "document_id": "...",
-            "text": "...",
-            ...
-        }
-    """
+    """Handle a Step Function Map iteration for PII redaction."""
     ctx = JobContext(
         job_id=event.get("job_id", ""),
         source_bucket="",
@@ -27,22 +20,28 @@ def handler(event: dict, context: object) -> dict:
         environment=os.environ.get("ENVIRONMENT", "dev"),
     )
 
-    chunk = RedactedChunk(**event) if "redaction_count" in event else _dict_to_chunk(event)
+    # The Map state wraps each item in {"chunk": {...}}
+    # We accept both the wrapped form and the bare chunk dict.
+    if "chunk" in event and isinstance(event["chunk"], dict):
+        chunk_data = event["chunk"]
+    else:
+        chunk_data = event
+
+    # The chunk may come in with missing redaction fields (first time through).
+    # Build a RedactedChunk, defaulting the redaction fields.
+    if "redaction_count" not in chunk_data:
+        from src.common import Chunk
+        base = Chunk(**{k: v for k, v in chunk_data.items() if k != "chunk"})
+        chunk = RedactedChunk(
+            **base.to_dict(),
+            redaction_count=0,
+            redaction_types=[],
+            redaction_policy_version="",
+            original_text_hash="",
+        )
+    else:
+        chunk = RedactedChunk(**chunk_data)
+
     redactor = PiiRedactor()
     result = redactor.handle(ctx, chunk)
-
-    return result.model_dump()
-
-
-def _dict_to_chunk(d: dict) -> RedactedChunk:
-    """Convert dict to RedactedChunk (filling redaction fields with defaults)."""
-    from src.common import Chunk
-
-    base = Chunk(**d)
-    return RedactedChunk(
-        **base.model_dump(),
-        redaction_count=0,
-        redaction_types=[],
-        redaction_policy_version="",
-        original_text_hash="",
-    )
+    return result.to_dict()

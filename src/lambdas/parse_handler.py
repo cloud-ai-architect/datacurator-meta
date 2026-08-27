@@ -59,8 +59,9 @@ def handler(event: dict, context: object) -> dict:
         "detected_format": result.detected_format,
         "text_content": result.text_content,
         "page_count": result.page_count,
-        "structured_elements": [e.model_dump() for e in result.structured_elements],
+        "structured_elements": [e.to_dict() for e in result.structured_elements],
         "parse_duration_ms": result.parse_duration_ms,
         "parser_version": result.parser_version,
         "warnings": result.warnings,
     }
+

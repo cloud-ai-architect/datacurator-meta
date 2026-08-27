@@ -30,4 +30,5 @@ def handler(event: dict, context: object) -> dict:
     embedder = BedrockEmbedder()
     result = embedder.handle(ctx, chunk)
 
-    return result.model_dump()
+    return result.to_dict()
+

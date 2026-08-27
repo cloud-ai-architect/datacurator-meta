@@ -36,5 +36,6 @@ def handler(event: dict, context: object) -> dict:
     return {
         "job_id": ctx.job_id,
         "chunk_count": len(chunks),
-        "chunks": [c.model_dump() for c in chunks],
+        "chunks": [c.to_dict() for c in chunks],
     }
+

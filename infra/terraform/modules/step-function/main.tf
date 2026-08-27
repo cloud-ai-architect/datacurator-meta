@@ -60,25 +60,53 @@ locals {
         Next = "Parse"
       }
       Parse = {
-        Type = "Choice"
-        Choices = [
-          { Variable = "$.detected_format", StringEquals = "pdf",  Next = "ParsePdf" },
-          { Variable = "$.detected_format", StringEquals = "csv",  Next = "ParseCsv" },
-          { Variable = "$.detected_format", StringEquals = "json", Next = "ParseJson" },
-          { Variable = "$.detected_format", StringEquals = "html", Next = "ParseHtml" },
-        ]
-        Default = "Failed"
+        Type = "Pass"
+        Parameters = {
+          "job_id.$"            = "$.Payload.job_id"
+          "source_bucket.$"     = "$.Payload.source_bucket"
+          "source_key.$"        = "$.Payload.source_key"
+          "detected_format.$"   = "$.Payload.detected_format"
+          "detected_encoding.$" = "$.Payload.detected_encoding"
+          "size_bytes.$"        = "$.Payload.size_bytes"
+        }
+        ResultPath = "$.parsed"
+        Next = "ParseLambda"
       }
-      ParsePdf = {
+      ParseLambda = {
         Type     = "Task"
         Resource = "arn:aws:states:::lambda:invoke"
 
         Parameters = {
           "FunctionName" = var.lambda_arns["parse"]
-          "Payload.$"    = "$.Payload"
+          "Payload.$"    = "$.parsed"
         }
 
-        ResultPath = "$.parsed"
+        ResultPath = "$.parseResult"
+        Retry = [{
+          ErrorEquals    = ["States.TaskFailed"]
+          IntervalSeconds = 1
+          MaxAttempts    = 3
+          BackoffRate    = 2.0
+        }]
+
+        Catch = [{
+          ErrorEquals = ["States.ALL"]
+          ResultPath  = "$.error"
+          Next       = "Failed"
+        }]
+
+        Next = "ChunkLambda"
+      }
+      ChunkLambda = {
+        Type     = "Task"
+        Resource = "arn:aws:states:::lambda:invoke"
+
+        Parameters = {
+          "FunctionName" = var.lambda_arns["chunk"]
+          "Payload.$"    = "$.parseResult.Payload"
+        }
+
+        ResultPath = "$.chunkResult"
         Retry = [{
           ErrorEquals    = ["States.TaskFailed"]
           IntervalSeconds = 1
@@ -94,12 +122,9 @@ locals {
 
         Next = "Chunk"
       }
-      ParseCsv  = { Type = "Pass", Next = "Chunk" }
-      ParseJson = { Type = "Pass", Next = "Chunk" }
-      ParseHtml = { Type = "Pass", Next = "Chunk" }
       Chunk = {
         Type      = "Map"
-        ItemsPath = "$.chunks"
+        ItemsPath = "$.chunkResult.Payload.chunks"
         Parameters = {
           "chunk.$" = "$$.Map.Item.Value"
         }

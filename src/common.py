@@ -5,9 +5,11 @@ This module is the foundation for every Lambda handler. It provides:
 - BaseLambda: abstract base class for all stage handlers
 - JobContext: per-invocation context (job_id, source_bucket, etc.)
 - @stage decorator: ties a handler to its input/output models and emits metrics
-- Pydantic models for inter-stage contracts
+- DataCuratorModel: stdlib dataclass base (replaces pydantic.BaseModel)
 - Structured logging via structlog
 - Exception hierarchy
+
+No external dependencies (no pydantic) — pure stdlib + boto3 + structlog.
 """
 
 from __future__ import annotations
@@ -17,12 +19,11 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from dataclasses import dataclass
-from typing import Any, ClassVar, Literal
+from dataclasses import asdict, dataclass, field, fields, is_dataclass
+from typing import Any, ClassVar, Literal, get_args, get_origin
 
 import boto3
 import structlog
-from pydantic import BaseModel, ConfigDict, Field
 
 logger = structlog.get_logger()
 
@@ -81,104 +82,246 @@ class JobContext:
     custom: dict[str, Any] | None = None
 
 
-# --- Pydantic base model ---
+# --- Dataclass base (pydantic-free) ---
 
 
-class DataCuratorModel(BaseModel):
-    """Base Pydantic model with common config."""
+def _strip_whitespace(value: Any) -> Any:
+    """Recursively strip whitespace from strings in nested data."""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, dict):
+        return {k: _strip_whitespace(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_strip_whitespace(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(_strip_whitespace(v) for v in value)
+    return value
 
-    model_config = ConfigDict(
-        extra="forbid",
-        str_strip_whitespace=True,
-        validate_assignment=True,
-        use_enum_values=True,
-    )
+
+def _check_literal(value: Any, annotation: Any) -> None:
+    """Check that value matches a Literal type; raise TypeError if not."""
+    if get_origin(annotation) is Literal:
+        allowed = get_args(annotation)
+        if value not in allowed:
+            raise TypeError(
+                f"Value {value!r} not in allowed Literal values: {allowed}"
+            )
 
 
-# --- Inter-stage data models (full Pydantic definitions) ---
+def _check_types(obj: Any) -> None:
+    """Recursively type-check fields with Literal annotations."""
+    if not is_dataclass(obj):
+        return
+    for f in fields(obj):
+        if f.name.startswith("_"):
+            continue
+        value = getattr(obj, f.name)
+        annotation = f.type
+        # Resolve string annotations (from __future__ import annotations)
+        if isinstance(annotation, str):
+            # We use a small set, so just check by trying
+            try:
+                if annotation.startswith("Literal[") or annotation.startswith("typing.Literal["):
+                    # Naive parse for "Literal['a', 'b']"
+                    inner = annotation.split("Literal[")[1].rstrip("]")
+                    allowed = tuple(s.strip().strip("'\"") for s in inner.split(","))
+                    if value not in allowed:
+                        raise TypeError(
+                            f"Field {f.name}: {value!r} not in {allowed}"
+                        )
+            except (IndexError, ValueError):
+                pass
+        else:
+            try:
+                _check_literal(value, annotation)
+            except TypeError as e:
+                raise TypeError(f"Field {f.name}: {e}") from e
+        # Recurse into nested dataclass
+        if is_dataclass(value):
+            _check_types(value)
+        elif isinstance(value, list) and value and is_dataclass(value[0]):
+            for item in value:
+                _check_types(item)
 
 
+@dataclass
+class DataCuratorModel:
+    """Base dataclass model.
+
+    Provides pydantic-like ergonomics on top of stdlib dataclasses:
+    - `from_dict(d)` classmethod: construct from a dict (replaces `Model(**d)`)
+    - `to_dict()`: serialize to dict (replaces `model_dump()`)
+    - Whitespace stripping on string fields
+    - Literal type validation in __post_init__
+    - Extra fields are ignored (lenient, for forward compat)
+    """
+
+    def __post_init__(self) -> None:
+        # Strip whitespace from all string fields
+        for f in fields(self):
+            value = getattr(self, f.name)
+            stripped = _strip_whitespace(value)
+            if stripped is not value:
+                object.__setattr__(self, f.name, stripped)
+        # Validate Literal fields
+        _check_types(self)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to a plain dict (replaces pydantic.model_dump)."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "DataCuratorModel":
+        """Construct from a dict, ignoring unknown keys (replaces pydantic.model_validate).
+
+        Performs nested construction for dataclass-typed fields.
+        """
+        if not isinstance(data, dict):
+            raise TypeError(f"from_dict requires a dict, got {type(data).__name__}")
+        known = {f.name for f in fields(cls)}
+        kwargs: dict[str, Any] = {}
+        for key, value in data.items():
+            if key not in known:
+                continue  # ignore extras
+            # Recursively construct nested dataclasses
+            f = next((fld for fld in fields(cls) if fld.name == key), None)
+            if f is not None:
+                annotation = f.type
+                # Resolve string annotations
+                if isinstance(annotation, str) and "." in annotation:
+                    annotation = annotation.split(".")[-1]
+                # Check if this is a nested dataclass field
+                if isinstance(annotation, str):
+                    ann_name = annotation
+                else:
+                    ann_name = getattr(annotation, "__name__", str(annotation))
+                # Try to find a nested type
+                nested = globals().get(ann_name) or _resolve_typing(annotation)
+                if nested is not None and is_dataclass(nested) and isinstance(value, dict):
+                    value = nested.from_dict(value)
+                elif (
+                    nested is not None
+                    and is_dataclass(nested)
+                    and isinstance(value, list)
+                    and value
+                    and isinstance(value[0], dict)
+                ):
+                    value = [nested.from_dict(v) for v in value]
+            kwargs[key] = value
+        return cls(**kwargs)
+
+
+def _resolve_typing(annotation: Any) -> Any:
+    """Resolve a typing annotation to its concrete class if possible."""
+    # Handle Optional[X], List[X], etc.
+    origin = get_origin(annotation)
+    if origin is not None:
+        args = get_args(annotation)
+        for a in args:
+            resolved = _resolve_typing(a)
+            if resolved is not None and is_dataclass(resolved):
+                return resolved
+    # Handle string annotations
+    if isinstance(annotation, str):
+        return globals().get(annotation)
+    # Handle direct class reference
+    if isinstance(annotation, type):
+        return annotation
+    return None
+
+
+# --- Inter-stage data models (dataclass-based) ---
+
+
+@dataclass
 class DetectResult(DataCuratorModel):
     """Output of the Detect stage, input to the Parse stage."""
 
     job_id: str
     source_bucket: str
     source_key: str
-    detected_format: Literal["pdf", "csv", "json", "html", "audio", "image", "video", "unknown"]
+    detected_format: str
     detected_encoding: str = "utf-8"
-    magic_bytes_verified: bool
-    detected_at: str
-    size_bytes: int
+    magic_bytes_verified: bool = True
+    detected_at: str = ""
+    size_bytes: int = 0
 
 
+@dataclass
 class StructuredElement(DataCuratorModel):
     """A structured element extracted by a parser (table, image, header)."""
 
-    element_type: Literal["table", "image", "header", "code_block", "list", "paragraph"]
+    element_type: str  # "table" | "image" | "header" | "code_block" | "list" | "paragraph"
     text: str | None = None
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     page: int | None = None
     position: int | None = None
 
 
+@dataclass
 class ParsedDocument(DataCuratorModel):
     """Output of the Parse stage, input to the Chunk stage."""
 
     job_id: str
     detected_format: str
     text_content: str
-    structured_elements: list[StructuredElement] = Field(default_factory=list)
+    structured_elements: list[StructuredElement] = field(default_factory=list)
     page_count: int | None = None
     language: str | None = None
-    parse_duration_ms: int
-    parser_version: str
-    warnings: list[str] = Field(default_factory=list)
+    parse_duration_ms: int = 0
+    parser_version: str = ""
+    warnings: list[str] = field(default_factory=list)
 
 
+@dataclass
 class Chunk(DataCuratorModel):
     """Output of the Chunk stage, input to the Redact stage."""
 
-    chunk_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    job_id: str
-    document_id: str
-    chunk_index: int
-    text: str
-    token_count: int
+    chunk_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    job_id: str = ""
+    document_id: str = ""
+    chunk_index: int = 0
+    text: str = ""
+    token_count: int = 0
     overlap_with_previous: int = 0
-    chunk_strategy: str
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    chunk_strategy: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
     page: int | None = None
     embedding_model: str | None = None
 
 
+@dataclass
 class RedactedChunk(Chunk):
     """Output of the Redact stage, input to the Embed stage."""
 
     redaction_count: int = 0
-    redaction_types: list[str] = Field(default_factory=list)
+    redaction_types: list[str] = field(default_factory=list)
     redaction_policy_version: str = ""
     original_text_hash: str = ""
 
 
+@dataclass
+class Classification(DataCuratorModel):
+    """A classification label assigned to a chunk."""
+
+    category: str = "general"
+    tags: list[str] = field(default_factory=list)
+    confidence: float = 0.0
+    classifier_version: str = ""
+    model_used: str = ""
+
+
+@dataclass
 class EmbeddedChunk(RedactedChunk):
     """Output of the Embed stage, input to the Classify stage."""
 
-    embedding: list[float] = Field(default_factory=list)
+    embedding: list[float] = field(default_factory=list)
     embedding_model: str = ""
     embedding_dim: int = 0
     embedding_duration_ms: int = 0
 
 
-class Classification(DataCuratorModel):
-    """A classification label assigned to a chunk."""
-
-    category: str
-    tags: list[str] = Field(default_factory=list)
-    confidence: float = Field(ge=0.0, le=1.0)
-    classifier_version: str
-    model_used: str
-
-
+@dataclass
 class ClassifiedChunk(EmbeddedChunk):
     """Output of the Classify stage, input to the Route stage."""
 
@@ -268,19 +411,29 @@ def stage(
                 input_type=type(inp).__name__,
             )
             try:
-                # Validate input if model provided
+                # Coerce input to expected model
                 if input_model is not None and not isinstance(inp, input_model):
-                    inp = input_model.model_validate(inp.model_dump())
+                    if isinstance(inp, dict):
+                        inp = input_model.from_dict(inp)
+                    else:
+                        # Best-effort: dump and reconstruct
+                        inp = input_model.from_dict(inp.to_dict() if hasattr(inp, "to_dict") else inp.__dict__)
 
                 # Call the actual handler
                 result = original_handle(self, ctx, inp)
 
-                # Validate output if model provided
+                # Validate output
                 if isinstance(result, list):
                     if output_model is not None:
-                        result = [output_model.model_validate(r.model_dump() if hasattr(r, "model_dump") else r) for r in result]
+                        result = [
+                            r if isinstance(r, output_model)
+                            else output_model.from_dict(r.to_dict() if hasattr(r, "to_dict") else r)
+                            for r in result
+                        ]
                 elif output_model is not None and not isinstance(result, output_model):
-                    result = output_model.model_validate(result.model_dump() if hasattr(result, "model_dump") else result)
+                    result = output_model.from_dict(
+                        result.to_dict() if hasattr(result, "to_dict") else result.__dict__
+                    )
 
                 duration_ms = int((time.perf_counter() - start) * 1000)
                 self.log.info(

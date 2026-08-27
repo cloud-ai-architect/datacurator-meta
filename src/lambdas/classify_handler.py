@@ -30,4 +30,5 @@ def handler(event: dict, context: object) -> dict:
     classifier = RuleBasedClassifier()
     result = classifier.handle(ctx, chunk)
 
-    return result.model_dump()
+    return result.to_dict()
+
