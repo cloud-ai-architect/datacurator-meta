@@ -119,7 +119,7 @@ module "step_function" {
   source = "./modules/step-function"
 
   name_prefix       = local.name_prefix
-  state_machine_arn = module.lambdas.state_machine_role_arn
+  state_machine_arn = module.iam.state_machine_role_arn
   lambda_arns       = module.lambdas.function_arns
   common_tags       = local.common_tags
 }

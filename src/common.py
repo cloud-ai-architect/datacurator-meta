@@ -76,7 +76,7 @@ class JobContext:
     source_bucket: str
     source_key: str
     environment: str
-    started_at: float = field_factory := lambda: time.time()  # noqa: E731
+    started_at: float = 0.0
     cumulative_cost_usd: float = 0.0
     custom: dict[str, Any] | None = None
 

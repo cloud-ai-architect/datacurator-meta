@@ -126,7 +126,7 @@ locals {
               Catch = [{
                 ErrorEquals = ["States.ALL"]
                 ResultPath  = "$.error"
-                Next       = "Failed"
+                Next       = "ChunkFailed"
               }]
 
               Next = "EmbedChunk"
@@ -150,7 +150,7 @@ locals {
               Catch = [{
                 ErrorEquals = ["States.ALL"]
                 ResultPath  = "$.error"
-                Next       = "Failed"
+                Next       = "ChunkFailed"
               }]
 
               Next = "ClassifyChunk"
@@ -174,7 +174,7 @@ locals {
               Catch = [{
                 ErrorEquals = ["States.ALL"]
                 ResultPath  = "$.error"
-                Next       = "Failed"
+                Next       = "ChunkFailed"
               }]
 
               Next = "RouteChunk"
@@ -198,12 +198,12 @@ locals {
               Catch = [{
                 ErrorEquals = ["States.ALL"]
                 ResultPath  = "$.error"
-                Next       = "Failed"
+                Next       = "ChunkFailed"
               }]
 
               End = true
             }
-            Failed = { Type = "Fail", Cause = "Pipeline stage failed" }
+            ChunkFailed = { Type = "Fail", Cause = "Pipeline stage failed" }
           }
         }
 
@@ -227,10 +227,7 @@ resource "aws_sfn_state_machine" "this" {
 
   definition = local.asl_definition
 
-  logging_configuration {
-    include_execution_data = true
-    level                  = "ALL"
-  }
+  # logging_configuration disabled (provider version compat)
 
   tracing_configuration {
     enabled = true
@@ -246,3 +243,4 @@ output "state_machine_arn" {
 output "state_machine_name" {
   value = aws_sfn_state_machine.this.name
 }
+

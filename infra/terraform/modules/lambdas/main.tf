@@ -100,16 +100,17 @@ locals {
     LOG_LEVEL        = "INFO"
   }
 
+  # Python handler format: module_path.function_name (dots, not colons)
   stage_lambdas = {
-    detect   = "src.lambdas.detect_handler:handler"
-    parse    = "src.lambdas.parse_handler:handler"
-    chunk    = "src.lambdas.chunk_handler:handler"
-    redact   = "src.lambdas.redact_handler:handler"
-    embed    = "src.lambdas.embed_handler:handler"
-    classify = "src.lambdas.classify_handler:handler"
-    route    = "src.lambdas.route_handler:handler"
-    search   = "src.lambdas.search_handler:handler"
-    feedback = "src.lambdas.feedback_handler:handler"
+    detect   = "src.lambdas.detect_handler.handler"
+    parse    = "src.lambdas.parse_handler.handler"
+    chunk    = "src.lambdas.chunk_handler.handler"
+    redact   = "src.lambdas.redact_handler.handler"
+    embed    = "src.lambdas.embed_handler.handler"
+    classify = "src.lambdas.classify_handler.handler"
+    route    = "src.lambdas.route_handler.handler"
+    search   = "src.lambdas.search_handler.handler"
+    feedback = "src.lambdas.feedback_handler.handler"
   }
 }
 

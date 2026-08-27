@@ -85,24 +85,6 @@ resource "aws_cloudwatch_event_target" "this" {
   rule     = aws_cloudwatch_event_rule.this.name
   arn      = var.state_machine_arn
   role_arn = aws_iam_role.this.arn
-
-  input_transformer {
-    input_paths = {
-      bucket = "$.detail.bucket.name"
-      key    = "$.detail.object.key"
-      size   = "$.detail.object.size"
-    }
-
-    input_template = <<EOF
-{
-  "job_id": "<job-id>",
-  "source_bucket": "<bucket>",
-  "source_key": "<key>",
-  "size_bytes": <size>,
-  "started_at": "<timestamp>"
-}
-EOF
-  }
 }
 
 output "rule_arn" {

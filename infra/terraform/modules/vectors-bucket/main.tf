@@ -100,16 +100,10 @@ resource "null_resource" "s3_vector_bucket" {
 
   provisioner "local-exec" {
     command = <<EOF
-set -e
 echo "Creating S3 vector bucket: ${var.bucket_name}"
-aws s3vectors create-vector-bucket --vector-bucket-name "${var.bucket_name}" --region ap-south-1 || echo "Bucket may already exist"
+aws s3vectors create-vector-bucket --vector-bucket-name "${var.bucket_name}" --region ap-south-1
 echo "Creating S3 vector index: ${var.index_name}"
-aws s3vectors create-index \
-  --vector-bucket-name "${var.bucket_name}" \
-  --index-name "${var.index_name}" \
-  --dimension ${var.embedding_dim} \
-  --distance-metric cosine \
-  --region ap-south-1 || echo "Index may already exist"
+aws s3vectors create-index --vector-bucket-name "${var.bucket_name}" --index-name "${var.index_name}" --dimension ${var.embedding_dim} --distance-metric cosine --region ap-south-1
 EOF
   }
 }
@@ -121,16 +115,7 @@ resource "null_resource" "s3_vector_index_tag" {
   }
 
   depends_on = [null_resource.s3_vector_bucket]
-
-  provisioner "local-exec" {
-    command = <<EOF
-set -e
-aws s3vectors tag-resource \
-  --resource-arn "arn:aws:s3vectors:ap-south-1:${data.aws_caller_identity.current.account_id}:vector-bucket/${var.bucket_name}" \
-  --tags "Project=datacurator,Environment=dev" \
-  --region ap-south-1 || true
-EOF
-  }
+  # Tag step disabled (ARN format quirk in s3vectors CLI; tags optional)
 }
 
 data "aws_caller_identity" "current" {}
