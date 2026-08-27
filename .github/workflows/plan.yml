@@ -1,0 +1,90 @@
+###############################################################################
+# DataCurator - Terraform plan on PR
+# -----------------------------------------------------------------------------
+# Runs `terraform plan` against the dev environment when a PR is opened.
+# Posts the plan output as a PR comment.
+# Read-only: does NOT apply changes.
+###############################################################################
+
+name: Terraform Plan
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/plan.yml"
+      - ".github/workflows/apply.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write  # required for OIDC
+
+jobs:
+  plan:
+    name: Plan (dev)
+    runs-on: ubuntu-latest
+    environment: dev  # uses environment-scoped secrets
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
+          role-session-name: datacurator-plan-${{ github.run_id }}
+
+      - name: Verify AWS identity
+        run: |
+          echo "Assuming role: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}"
+          aws sts get-caller-identity
+
+      - name: Terraform init
+        working-directory: infra/terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=datacurator-tfstate-dev" \
+            -backend-config="region=ap-south-1" \
+            -backend-config="dynamodb_table=datacurator-tfstate-lock-dev"
+
+      - name: Terraform plan
+        id: plan
+        working-directory: infra/terraform
+        run: |
+          terraform plan \
+            -var-file=envs/dev.tfvars \
+            -no-color \
+            -out=tfplan
+
+      - name: Show plan summary
+        if: always()
+        working-directory: infra/terraform
+        run: |
+          echo "### Terraform Plan Summary" >> $GITHUB_STEP_SUMMARY
+          terraform show -no-color tfplan | head -100 >> $GITHUB_STEP_SUMMARY
+
+      - name: Post plan to PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('infra/terraform/tfplan', 'utf8');
+            const summary = `### Terraform Plan
+            \`\`\`
+            ${plan.slice(0, 30000)}
+            \`\`\`
+            `;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary,
+            });

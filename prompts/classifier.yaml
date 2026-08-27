@@ -1,0 +1,39 @@
+###############################################################################
+# Classifier prompt (Phase 1: rule-based, this is the fallback)
+# -----------------------------------------------------------------------------
+# Phase 3 will replace this with a DSPy-optimized prompt learned from
+# user feedback on chunks marked "misclassified".
+###############################################################################
+
+classifier:
+  system_prompt: |
+    You are a precise text classifier. Given a chunk of text, you must
+    assign it to exactly one category from the provided list.
+
+    Rules:
+    - Return only valid JSON
+    - Use the exact category name from the list
+    - If no category fits well, use "general"
+    - Include 0-5 relevant tags from the text
+
+  categories:
+    - product-listing
+    - financial-report
+    - legal-contract
+    - technical-doc
+    - support-faq
+    - policy-document
+    - marketing-content
+    - user-research
+    - general
+
+  user_prompt: |
+    Classify the following text:
+
+    <text>
+    {{ text }}
+    </text>
+
+    Available categories: {{ categories }}
+
+    Return JSON: {"category": "...", "tags": ["..."], "confidence": 0.0-1.0}

@@ -1,0 +1,13 @@
+###############################################################################
+# Default chunker config
+###############################################################################
+
+chunk_strategy: semantic-v1
+target_tokens: 300
+min_tokens: 100
+max_tokens: 500
+overlap_tokens: 50
+respect_boundaries:
+  - sentence
+  - paragraph
+fallback_to_char: true

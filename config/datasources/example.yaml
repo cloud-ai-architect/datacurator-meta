@@ -1,0 +1,34 @@
+###############################################################################
+# Example data source config
+# -----------------------------------------------------------------------------
+# Copy this file to define a new data source. The key is the s3 prefix.
+###############################################################################
+
+name: example-source
+description: Example configuration for a new data source
+enabled: true
+
+# Where in S3 to find files
+s3:
+  bucket: datacurator-raw-dev
+  prefix: ingests/example-source/
+
+# Parser config (must exist in config/parsers/)
+parser: default
+
+# Chunker config (must exist in config/chunkers/)
+chunker: default
+
+# Embedder config (must exist in config/embedders/)
+embedder: titan-v2
+
+# Classifier config (must exist in config/classifier/)
+classifier: default
+
+# Metadata to attach to every chunk from this source
+metadata:
+  source_name: example-source
+  team: data-platform
+
+# Lifecycle
+retention_days: 30

@@ -1,0 +1,10 @@
+###############################################################################
+# PDF parser config
+###############################################################################
+
+parser: docling  # will be used in Phase 2
+phase1_fallback: pypdf2
+extract_tables: true
+extract_images: false
+preserve_layout: true
+max_pages: 1000

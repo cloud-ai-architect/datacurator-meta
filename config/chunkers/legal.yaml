@@ -1,0 +1,17 @@
+###############################################################################
+# Legal document chunker config
+# -----------------------------------------------------------------------------
+# Larger chunks to preserve clause context, with section/clause awareness.
+###############################################################################
+
+chunk_strategy: legal-v1
+target_tokens: 500
+min_tokens: 200
+max_tokens: 800
+overlap_tokens: 100
+respect_boundaries:
+  - section
+  - clause
+  - paragraph
+fallback_to_char: true
+preserve_numbering: true

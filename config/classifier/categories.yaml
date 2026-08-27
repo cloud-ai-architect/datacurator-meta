@@ -1,0 +1,85 @@
+###############################################################################
+# Classifier categories
+# -----------------------------------------------------------------------------
+# Edit this file to add new categories or change keywords. The classifier
+# picks the category with the most keyword matches in the chunk text.
+#
+# Phase 1 uses rule-based matching. Phase 3 will use DSPy to learn from
+# user feedback and replace this file with a learned prompt.
+###############################################################################
+
+categories:
+  product-listing:
+    - product
+    - sku
+    - price
+    - buy
+    - cart
+    - shop
+    - inventory
+    - stock
+    - catalog
+  financial-report:
+    - revenue
+    - earnings
+    - fiscal
+    - 10-k
+    - 10-q
+    - quarterly
+    - ebitda
+    - balance sheet
+    - income statement
+    - cash flow
+  legal-contract:
+    - agreement
+    - party
+    - clause
+    - whereas
+    - shall
+    - jurisdiction
+    - herein
+    - termination
+    - indemnify
+  technical-doc:
+    - api
+    - endpoint
+    - function
+    - parameter
+    - return
+    - schema
+    - request
+    - response
+    - method
+    - class
+  support-faq:
+    - how to
+    - question
+    - answer
+    - help
+    - support
+    - issue
+    - problem
+    - troubleshoot
+  policy-document:
+    - policy
+    - compliance
+    - gdpr
+    - hipaa
+    - regulation
+    - requirement
+    - mandatory
+  marketing-content:
+    - blog
+    - article
+    - news
+    - announcement
+    - press release
+    - campaign
+  user-research:
+    - interview
+    - survey
+    - feedback
+    - persona
+    - user
+    - customer
+  general: []

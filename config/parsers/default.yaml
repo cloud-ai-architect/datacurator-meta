@@ -1,0 +1,9 @@
+###############################################################################
+# Default parser config
+###############################################################################
+
+parser: default
+max_file_size_mb: 100
+truncate_rows: 500
+preserve_structure: true
+detect_language: true

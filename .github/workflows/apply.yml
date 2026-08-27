@@ -1,0 +1,67 @@
+###############################################################################
+# DataCurator - Terraform apply on main
+# -----------------------------------------------------------------------------
+# Runs `terraform apply` when code is merged to main.
+# Requires manual approval via GitHub Environment protection rule.
+# Uses OIDC for AWS auth (no long-lived credentials).
+###############################################################################
+
+name: Terraform Apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/terraform/**"
+      - ".github/workflows/apply.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  apply-dev:
+    name: Apply to dev
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
+          role-session-name: datacurator-apply-${{ github.run_id }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Terraform init
+        working-directory: infra/terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=datacurator-tfstate-dev" \
+            -backend-config="region=ap-south-1" \
+            -backend-config="dynamodb_table=datacurator-tfstate-lock-dev"
+
+      - name: Terraform apply
+        working-directory: infra/terraform
+        run: |
+          terraform apply \
+            -var-file=envs/dev.tfvars \
+            -auto-approve
+
+      - name: Post apply outputs
+        if: always()
+        working-directory: infra/terraform
+        run: |
+          echo "### Terraform Apply Outputs" >> $GITHUB_STEP_SUMMARY
+          terraform output >> $GITHUB_STEP_SUMMARY

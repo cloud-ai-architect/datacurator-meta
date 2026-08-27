@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataCurator Knowledge Base</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="logo">📚</span>
+        <h1>DataCurator KB</h1>
+      </div>
+      <div class="header-meta">
+        <span class="env-badge" id="env-badge">dev</span>
+        <span class="stats" id="stats">
+          <span class="stat" id="stat-results">0 results</span>
+          <span class="stat" id="stat-duration">—</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <aside class="sidebar">
+      <section class="search-section">
+        <h2>Search</h2>
+        <input type="search" id="search-input" placeholder="Ask anything..." autofocus>
+        <div class="search-options">
+          <label>Top K:
+            <input type="number" id="top-k" value="10" min="1" max="100">
+          </label>
+        </div>
+        <button id="search-btn" class="primary-btn">Search</button>
+      </section>
+
+      <section class="filters-section">
+        <h2>Filters</h2>
+        <label>Source
+          <input type="text" id="filter-source" placeholder="e.g. retailpulse">
+        </label>
+        <label>Format
+          <select id="filter-format">
+            <option value="">All</option>
+            <option value="pdf">PDF</option>
+            <option value="csv">CSV</option>
+            <option value="json">JSON</option>
+            <option value="html">HTML</option>
+          </select>
+        </label>
+        <label>Min score
+          <input type="range" id="min-score" min="0" max="1" step="0.05" value="0">
+          <span id="min-score-value">0.00</span>
+        </label>
+        <button id="reset-filters" class="secondary-btn">Reset</button>
+      </section>
+
+      <section class="bulk-section">
+        <h2>Bulk feedback</h2>
+        <p class="hint">Select multiple results, then submit.</p>
+        <button id="select-all" class="secondary-btn">Select all</button>
+        <button id="bulk-good" class="bulk-btn good" disabled>Mark good</button>
+        <button id="bulk-misclass" class="bulk-btn bad" disabled>Mark misclassified</button>
+      </section>
+
+      <section class="analytics-section">
+        <h2>Analytics</h2>
+        <div class="metric">
+          <span class="label">Searches today</span>
+          <span class="value" id="metric-searches">—</span>
+        </div>
+        <div class="metric">
+          <span class="label">Avg duration</span>
+          <span class="value" id="metric-avg-duration">—</span>
+        </div>
+        <div class="metric">
+          <span class="label">Feedback submitted</span>
+          <span class="value" id="metric-feedback">—</span>
+        </div>
+        <button id="refresh-metrics" class="secondary-btn">Refresh</button>
+      </section>
+    </aside>
+
+    <section class="results-pane">
+      <div id="results" class="results">
+        <div class="empty-state">
+          <h2>Search the knowledge base</h2>
+          <p>Enter a query in the sidebar to find relevant chunks. Use filters to narrow by source or format.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

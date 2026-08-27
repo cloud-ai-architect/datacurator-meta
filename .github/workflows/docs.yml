@@ -1,0 +1,39 @@
+###############################################################################
+# DataCurator - Documentation lint
+# -----------------------------------------------------------------------------
+# Lint all markdown files and check for broken internal links.
+###############################################################################
+
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/*.md"
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.md"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Markdown lint
+        uses: DavidAnson/markdownlint-cli2-action@v18
+        with:
+          globs: |
+            **/*.md
+
+      - name: Check for "TODO" without issue link
+        run: |
+          # Find TODOs without an issue link
+          if grep -rn "TODO" --include="*.md" --include="*.py" --include="*.tf" --include="*.rego" . | grep -v "issue" | grep -v "Phase "; then
+            echo "::warning::Found TODOs without issue links. Please add a tracking issue."
+          fi
