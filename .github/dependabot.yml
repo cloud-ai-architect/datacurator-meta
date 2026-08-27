@@ -1,0 +1,57 @@
+# Dependabot configuration — DataCurator
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+
+version: 2
+
+# --- Grouped updates to reduce PR noise ---
+updates:
+  # GitHub Actions: pin to SHA for supply-chain security
+  - package-ecosystem: "github-actions"
+    directory: "/.github/workflows"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      actions-minor:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "ci"
+
+  # Python: pip
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      python-production:
+        dependency-type: "production"
+      python-development:
+        dependency-type: "development"
+    commit-message:
+      prefix: "deps"
+    labels:
+      - "dependencies"
+
+  # Terraform: lock file
+  - package-ecosystem: "terraform"
+    directory: "/infra/terraform"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      terraform-providers:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "deps"
+    labels:
+      - "dependencies"
+      - "terraform"

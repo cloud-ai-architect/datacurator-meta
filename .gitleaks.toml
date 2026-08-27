@@ -1,0 +1,90 @@
+# gitleaks configuration for DataCurator
+# https://github.com/gitleaks/gitleaks
+
+title = "DataCurator secret-scan config"
+
+[extend]
+# Use gitleaks' default ruleset as a base
+useDefault = true
+
+# Custom rules for AWS, OIDC, and project-specific patterns
+[[rules]]
+id = "aws-access-token-id"
+description = "AWS Access Key ID"
+regex = '''(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}'''
+tags = ["aws", "secret"]
+
+[[rules]]
+id = "aws-secret-access-key"
+description = "AWS Secret Access Key"
+regex = '''(?i)aws(.{0,20})?(secret|key|token)(.{0,20})?["'][0-9a-zA-Z/+]{40}["']'''
+tags = ["aws", "secret"]
+
+[[rules]]
+id = "github-pat"
+description = "GitHub Personal Access Token"
+regex = '''gh[pousr]_[A-Za-z0-9_]{36,255}'''
+tags = ["github", "secret"]
+
+[[rules]]
+id = "github-fine-grained-pat"
+description = "GitHub Fine-Grained Personal Access Token"
+regex = '''github_pat_[A-Za-z0-9_]{22,255}'''
+tags = ["github", "secret"]
+
+[[rules]]
+id = "github-oauth-token"
+description = "GitHub OAuth Access Token"
+regex = '''gho_[A-Za-z0-9_]{36,255}'''
+tags = ["github", "secret"]
+
+[[rules]]
+id = "slack-bot-token"
+description = "Slack Bot Token"
+regex = '''xox[baprs]-[0-9a-zA-Z]{10,48}'''
+tags = ["slack", "secret"]
+
+[[rules]]
+id = "stripe-api-key"
+description = "Stripe API Key"
+regex = '''(?i)(sk|pk|rk)_(test|live)_[0-9a-z]{16,32}'''
+tags = ["stripe", "secret"]
+
+[[rules]]
+id = "private-key-block"
+description = "PEM private key block"
+regex = '''-----BEGIN (?:RSA|EC|DSA|OPENSSH|PGP) PRIVATE KEY(?:\sBLOCK)?-----'''
+tags = ["key", "secret"]
+
+[[rules]]
+id = "account-id-arn"
+description = "Hardcoded AWS account ID in ARN"
+regex = '''arn:aws:[a-z0-9-]+:[a-z0-9-]*:[0-9]{12}:'''
+tags = ["aws", "account-id"]
+# Allow ARNs in documentation that explicitly use placeholders
+# but flag any with 12-digit numbers as suspect
+
+[allowlist]
+description = "Allowlist for known safe patterns"
+paths = [
+  '''^\.git/''',
+  '''^node_modules/''',
+  '''^dist/''',
+  '''^build/''',
+  '''\.terraform/''',
+  '''docs/adr/.*\.md''',  # ADRs may discuss account IDs in example ARNs
+]
+
+regexes = [
+  '''<ACCOUNT_ID>''',
+  '''\$\{aws_account_id\}''',
+  '''\$\{var\.aws_account_id\}''',
+  '''\$\{data\.aws_caller_identity\.current\.account_id\}''',
+  '''REPLACE_ME''',
+  '''XXX-XXX-XXX''',
+]
+
+# Stop the scanner on first hit to fail fast in CI
+[report]
+format = "json"
+exit-code = 1

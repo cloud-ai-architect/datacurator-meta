@@ -1,0 +1,68 @@
+# Pre-commit hooks for DataCurator
+# Install: pip install pre-commit && pre-commit install
+# Run all: pre-commit run --all-files
+# https://pre-commit.com/
+
+repos:
+  # --- Secret scanning ---
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+
+  # --- Python: lint + format ---
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.5
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  # --- Python: type check ---
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.1
+    hooks:
+      - id: mypy
+        additional_dependencies: [pydantic, types-PyYAML, types-redis]
+        args: [--strict, --ignore-missing-imports]
+
+  # --- Terraform: fmt + validate + lint + sec scan ---
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.0
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
+      - id: terraform_tflint
+      - id: terraform_tfsec
+      - id: terraform_docs
+
+  # --- General hygiene ---
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+        exclude: ^infra/terraform/modules/.*/test/
+      - id: check-json
+      - id: check-toml
+      - id: check-xml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+
+  # --- Markdown ---
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.41.0
+    hooks:
+      - id: markdownlint
+
+  # --- Conventional commits ---
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
