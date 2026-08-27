@@ -1,0 +1,38 @@
+"""Lambda handler for the Route stage."""
+
+from __future__ import annotations
+
+import os
+
+from src.common import ClassifiedChunk, JobContext
+from src.router import ChunkRouter
+
+
+def handler(event: dict, context: object) -> dict:
+    """Handle a Step Function invocation for routing to storage.
+
+    Event shape (from previous Classify state):
+        {
+            "chunk_id": "...",
+            "text": "...",
+            "embedding": [...],
+            "classification": {...},
+            ...
+        }
+    """
+    ctx = JobContext(
+        job_id=event.get("job_id", ""),
+        source_bucket="",
+        source_key="",
+        environment=os.environ.get("ENVIRONMENT", "dev"),
+    )
+
+    chunk = ClassifiedChunk(**event)
+    router = ChunkRouter()
+    result = router.handle(ctx, chunk)
+
+    return {
+        "chunk_id": result.chunk_id,
+        "job_id": result.job_id,
+        "status": "routed",
+    }
