@@ -7,13 +7,23 @@
 
 terraform {
   required_version = ">= 1.9.0"
+
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.50" }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.50"
+    }
   }
 }
 
-variable "tables"     { type = map(string) }
-variable "common_tags" { type = map(string); default = {} }
+variable "tables" {
+  type = map(string)
+}
+
+variable "common_tags" {
+  type    = map(string)
+  default = {}
+}
 
 # --- chunk-metadata ---
 
@@ -27,22 +37,27 @@ resource "aws_dynamodb_table" "chunk_metadata" {
     name = "chunk_id"
     type = "S"
   }
+
   attribute {
     name = "source_key"
     type = "S"
   }
+
   attribute {
     name = "created_at"
     type = "S"
   }
+
   attribute {
     name = "detected_format"
     type = "S"
   }
+
   attribute {
     name = "job_id"
     type = "S"
   }
+
   attribute {
     name = "chunk_index"
     type = "N"
@@ -54,12 +69,14 @@ resource "aws_dynamodb_table" "chunk_metadata" {
     range_key       = "created_at"
     projection_type = "ALL"
   }
+
   global_secondary_index {
     name            = "format-index"
     hash_key        = "detected_format"
     range_key       = "created_at"
     projection_type = "ALL"
   }
+
   global_secondary_index {
     name            = "job-index"
     hash_key        = "job_id"
@@ -72,8 +89,13 @@ resource "aws_dynamodb_table" "chunk_metadata" {
     enabled        = true
   }
 
-  point_in_time_recovery { enabled = true }
-  server_side_encryption { enabled = true }
+  point_in_time_recovery {
+    enabled = true
+  }
+
+  server_side_encryption {
+    enabled = true
+  }
 }
 
 # --- feedback ---
@@ -88,10 +110,12 @@ resource "aws_dynamodb_table" "feedback" {
     name = "feedback_id"
     type = "S"
   }
+
   attribute {
     name = "chunk_id"
     type = "S"
   }
+
   attribute {
     name = "created_at"
     type = "S"
@@ -109,8 +133,13 @@ resource "aws_dynamodb_table" "feedback" {
     enabled        = true
   }
 
-  point_in_time_recovery { enabled = true }
-  server_side_encryption { enabled = true }
+  point_in_time_recovery {
+    enabled = true
+  }
+
+  server_side_encryption {
+    enabled = true
+  }
 }
 
 # --- jobs ---
@@ -125,10 +154,12 @@ resource "aws_dynamodb_table" "jobs" {
     name = "job_id"
     type = "S"
   }
+
   attribute {
     name = "status"
     type = "S"
   }
+
   attribute {
     name = "started_at"
     type = "S"
@@ -146,10 +177,23 @@ resource "aws_dynamodb_table" "jobs" {
     enabled        = true
   }
 
-  point_in_time_recovery { enabled = true }
-  server_side_encryption { enabled = true }
+  point_in_time_recovery {
+    enabled = true
+  }
+
+  server_side_encryption {
+    enabled = true
+  }
 }
 
-output "chunk_metadata_arn" { value = aws_dynamodb_table.chunk_metadata.arn }
-output "feedback_arn"       { value = aws_dynamodb_table.feedback.arn }
-output "jobs_arn"           { value = aws_dynamodb_table.jobs.arn }
+output "chunk_metadata_arn" {
+  value = aws_dynamodb_table.chunk_metadata.arn
+}
+
+output "feedback_arn" {
+  value = aws_dynamodb_table.feedback.arn
+}
+
+output "jobs_arn" {
+  value = aws_dynamodb_table.jobs.arn
+}

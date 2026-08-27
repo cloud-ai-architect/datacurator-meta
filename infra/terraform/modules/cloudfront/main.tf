@@ -5,16 +5,36 @@
 
 terraform {
   required_version = ">= 1.9.0"
+
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.50" }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.50"
+    }
   }
 }
 
-variable "name_prefix" { type = string }
-variable "ui_bucket"   { type = string }
-variable "api_url"     { type = string }
-variable "enabled"     { type = bool; default = true }
-variable "common_tags" { type = map(string); default = {} }
+variable "name_prefix" {
+  type = string
+}
+
+variable "ui_bucket" {
+  type = string
+}
+
+variable "api_url" {
+  type = string
+}
+
+variable "enabled" {
+  type    = bool
+  default = true
+}
+
+variable "common_tags" {
+  type    = map(string)
+  default = {}
+}
 
 resource "aws_cloudfront_origin_access_control" "this" {
   name                              = "${var.name_prefix}-oac"
@@ -28,18 +48,15 @@ resource "aws_cloudfront_distribution" "this" {
   enabled             = var.enabled
   comment             = "DataCurator KB UI"
   default_root_object = "index.html"
-  price_class         = "PriceClass_100"  # US, Canada, Europe
+  price_class         = "PriceClass_100"
   tags                = var.common_tags
 
   origin {
-    domain_name              = "${var.ui_bucket}.s3.${var.api_url}".replace("https://", "").split("/")[0].replace(".execute-api.${var.api_url}", "").split(".")[0]
-    # HACK: derive region from api_url region prefix. Better: pass region explicitly.
-    # For now, we'll use a separate origin.
+    domain_name              = "${var.ui_bucket}.s3.amazonaws.com"
     origin_id                = "S3-${var.ui_bucket}"
     origin_access_control_id = aws_cloudfront_origin_access_control.this.id
   }
 
-  # Use S3 website endpoint as origin (simpler than OAC for read-only static)
   default_cache_behavior {
     target_origin_id       = "S3-${var.ui_bucket}"
     viewer_protocol_policy = "redirect-to-https"
@@ -49,7 +66,10 @@ resource "aws_cloudfront_distribution" "this" {
 
     forwarded_values {
       query_string = false
-      cookies { forward = "none" }
+
+      cookies {
+        forward = "none"
+      }
     }
 
     min_ttl     = 0
@@ -58,7 +78,9 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   restrictions {
-    geo_restriction { restriction_type = "none" }
+    geo_restriction {
+      restriction_type = "none"
+    }
   }
 
   viewer_certificate {
@@ -66,5 +88,10 @@ resource "aws_cloudfront_distribution" "this" {
   }
 }
 
-output "distribution_id"     { value = aws_cloudfront_distribution.this.id }
-output "distribution_domain" { value = aws_cloudfront_distribution.this.domain_name }
+output "distribution_id" {
+  value = aws_cloudfront_distribution.this.id
+}
+
+output "distribution_domain" {
+  value = aws_cloudfront_distribution.this.domain_name
+}

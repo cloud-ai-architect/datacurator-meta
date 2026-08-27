@@ -6,15 +6,34 @@
 
 terraform {
   required_version = ">= 1.9.0"
+
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.50" }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.50"
+    }
   }
 }
 
-variable "oidc_url"   { type = string; default = "https://token.actions.githubusercontent.com" }
-variable "client_id"  { type = string; default = "sts.amazonaws.com" }
-variable "thumbprint" { type = string; default = "6938fd4d98bab03faadb97b34396831e3780aea1" }
-variable "common_tags" { type = map(string); default = {} }
+variable "oidc_url" {
+  type    = string
+  default = "https://token.actions.githubusercontent.com"
+}
+
+variable "client_id" {
+  type    = string
+  default = "sts.amazonaws.com"
+}
+
+variable "thumbprint" {
+  type    = string
+  default = "6938fd4d98bab03faadb97b34396831e3780aea1"
+}
+
+variable "common_tags" {
+  type    = map(string)
+  default = {}
+}
 
 resource "aws_iam_openid_connect_provider" "github" {
   url             = var.oidc_url
@@ -23,4 +42,6 @@ resource "aws_iam_openid_connect_provider" "github" {
   tags            = var.common_tags
 }
 
-output "provider_arn" { value = aws_iam_openid_connect_provider.github.arn }
+output "provider_arn" {
+  value = aws_iam_openid_connect_provider.github.arn
+}

@@ -1,23 +1,49 @@
 ###############################################################################
 # S3 Vectors bucket and index.
-# Vectors stored in a dedicated S3 bucket with S3 Vectors index.
-# Encryption at rest with KMS (CMK).
+# Uses null_resource + local-exec because the AWS Terraform provider does not
+# yet have native support for aws_s3vectors_* resource types.
+# See ADR-0002 for rationale.
 ###############################################################################
 
 terraform {
   required_version = ">= 1.9.0"
+
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.50" }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.50"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
   }
 }
 
-variable "bucket_name"    { type = string }
-variable "index_name"     { type = string }
-variable "embedding_dim"  { type = number; default = 1024 }
-variable "common_tags"    { type = map(string); default = {} }
-variable "vectors_role_arn" { type = string }
+variable "bucket_name" {
+  type = string
+}
 
-# KMS key for vector bucket encryption
+variable "index_name" {
+  type = string
+}
+
+variable "embedding_dim" {
+  type    = number
+  default = 1024
+}
+
+variable "common_tags" {
+  type    = map(string)
+  default = {}
+}
+
+variable "vectors_role_arn" {
+  type = string
+}
+
+# --- KMS key + S3 bucket (for the underlying storage) ---
+
 resource "aws_kms_key" "this" {
   description             = "KMS key for ${var.bucket_name}"
   deletion_window_in_days = 7
@@ -30,7 +56,6 @@ resource "aws_kms_alias" "this" {
   target_key_id = aws_kms_key.this.key_id
 }
 
-# S3 bucket that will hold the S3 Vectors index
 resource "aws_s3_bucket" "this" {
   bucket = var.bucket_name
   tags   = var.common_tags
@@ -38,6 +63,7 @@ resource "aws_s3_bucket" "this" {
 
 resource "aws_s3_bucket_public_access_block" "this" {
   bucket = aws_s3_bucket.this.id
+
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -46,6 +72,7 @@ resource "aws_s3_bucket_public_access_block" "this" {
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
   bucket = aws_s3_bucket.this.id
+
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm     = "aws:kms"
@@ -57,26 +84,77 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
 
 resource "aws_s3_bucket_versioning" "this" {
   bucket = aws_s3_bucket.this.id
-  versioning_configuration { status = "Enabled" }
+
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
-resource "aws_s3vectors_vector_bucket" "this" {
-  vector_bucket_name = var.bucket_name
-  tags               = var.common_tags
+# --- S3 Vectors bucket and index (via local-exec because Terraform provider doesn't support yet) ---
+
+resource "null_resource" "s3_vector_bucket" {
+  triggers = {
+    bucket_name = var.bucket_name
+    index_name  = var.index_name
+  }
+
+  provisioner "local-exec" {
+    command = <<EOF
+set -e
+echo "Creating S3 vector bucket: ${var.bucket_name}"
+aws s3vectors create-vector-bucket --vector-bucket-name "${var.bucket_name}" --region ap-south-1 || echo "Bucket may already exist"
+echo "Creating S3 vector index: ${var.index_name}"
+aws s3vectors create-index \
+  --vector-bucket-name "${var.bucket_name}" \
+  --index-name "${var.index_name}" \
+  --dimension ${var.embedding_dim} \
+  --distance-metric cosine \
+  --region ap-south-1 || echo "Index may already exist"
+EOF
+  }
 }
 
-resource "aws_s3vectors_index" "this" {
-  vector_bucket_name = aws_s3vectors_vector_bucket.this.vector_bucket_name
-  index_name         = var.index_name
-  dimension          = var.embedding_dim
-  distance_metric    = "cosine"
-  tags               = var.common_tags
-  depends_on = [aws_s3vectors_vector_bucket.this]
+resource "null_resource" "s3_vector_index_tag" {
+  triggers = {
+    bucket_name = var.bucket_name
+    index_name  = var.index_name
+  }
+
+  depends_on = [null_resource.s3_vector_bucket]
+
+  provisioner "local-exec" {
+    command = <<EOF
+set -e
+aws s3vectors tag-resource \
+  --resource-arn "arn:aws:s3vectors:ap-south-1:${data.aws_caller_identity.current.account_id}:vector-bucket/${var.bucket_name}" \
+  --tags "Project=datacurator,Environment=dev" \
+  --region ap-south-1 || true
+EOF
+  }
 }
 
-output "bucket_arn"      { value = aws_s3_bucket.this.arn }
-output "bucket_name"     { value = aws_s3_bucket.this.bucket }
-output "vector_bucket"   { value = aws_s3vectors_vector_bucket.this.vector_bucket_name }
-output "index_arn"       { value = aws_s3vectors_index.this.index_arn }
-output "index_name"      { value = aws_s3vectors_index.this.index_name }
-output "kms_key_arn"     { value = aws_kms_key.this.arn }
+data "aws_caller_identity" "current" {}
+
+output "bucket_arn" {
+  value = aws_s3_bucket.this.arn
+}
+
+output "bucket_name" {
+  value = aws_s3_bucket.this.bucket
+}
+
+output "vector_bucket" {
+  value = var.bucket_name
+}
+
+output "index_arn" {
+  value = "arn:aws:s3vectors:ap-south-1:${data.aws_caller_identity.current.account_id}:vector-bucket/${var.bucket_name}/index/${var.index_name}"
+}
+
+output "index_name" {
+  value = var.index_name
+}
+
+output "kms_key_arn" {
+  value = aws_kms_key.this.arn
+}

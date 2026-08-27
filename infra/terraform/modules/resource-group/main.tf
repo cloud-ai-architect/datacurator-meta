@@ -1,17 +1,30 @@
 ###############################################################################
-# Resource Group for visibility (AWS Console "My applications" view)
+# Resource Group for visibility
 ###############################################################################
 
 terraform {
   required_version = ">= 1.9.0"
+
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.50" }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.50"
+    }
   }
 }
 
-variable "name_prefix" { type = string }
-variable "environment" { type = string }
-variable "common_tags" { type = map(string); default = {} }
+variable "name_prefix" {
+  type = string
+}
+
+variable "environment" {
+  type = string
+}
+
+variable "common_tags" {
+  type    = map(string)
+  default = {}
+}
 
 resource "aws_resourcegroups_group" "this" {
   name        = "rg-${var.name_prefix}"
@@ -30,5 +43,10 @@ resource "aws_resourcegroups_group" "this" {
   tags = var.common_tags
 }
 
-output "arn"  { value = aws_resourcegroups_group.this.arn }
-output "name" { value = aws_resourcegroups_group.this.name }
+output "arn" {
+  value = aws_resourcegroups_group.this.arn
+}
+
+output "name" {
+  value = aws_resourcegroups_group.this.name
+}
