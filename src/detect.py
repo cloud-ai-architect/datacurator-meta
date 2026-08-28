@@ -66,8 +66,9 @@ EXTENSION_MAP: dict[str, str] = {
     ".avi": "video",
     ".mkv": "video",
     ".webm": "video",
-    ".txt": "unknown",
-    ".md": "unknown",
+    ".txt": "text",
+    ".md": "text",
+    ".markdown": "text",
     ".docx": "pdf",  # we'll convert via docling
     ".xlsx": "csv",  # we'll convert to CSV
 }
@@ -104,7 +105,7 @@ class FormatDetector(BaseLambda):
         magic_format, verified = self._detect_from_magic_bytes(bucket, key)
 
         # Pick the most specific match
-        detected = self._reconcile(ext_format, ct_format, magic_format, key)
+        detected = self._reconcile(ext_format, ct_format, magic_format, bucket, key)
 
         return DetectResult(
             job_id=ctx.job_id,
@@ -143,7 +144,8 @@ class FormatDetector(BaseLambda):
             "image/gif": "image",
             "image/webp": "image",
             "video/mp4": "video",
-            "text/plain": "unknown",
+            "text/plain": "text",
+            "text/markdown": "text",
         }
         return mapping.get(ct, "unknown")
 
@@ -166,6 +168,7 @@ class FormatDetector(BaseLambda):
         ext_fmt: str,
         ct_fmt: str,
         magic_fmt: str,
+        bucket: str,
         key: str,
     ) -> str:
         """Reconcile conflicting format signals.
@@ -180,6 +183,6 @@ class FormatDetector(BaseLambda):
         if ext_fmt != "unknown":
             return ext_fmt
         raise FormatDetectionError(
-            f"Could not detect format for s3://{key} "
+            f"Could not detect format for s3://{bucket}/{key} "
             f"(ext={ext_fmt}, content_type={ct_fmt}, magic={magic_fmt})"
         )

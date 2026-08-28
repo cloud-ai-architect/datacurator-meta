@@ -141,6 +141,12 @@ locals {
                 "Payload.$"    = "$"
               }
 
+              # Unwrap the lambda:invoke envelope ({Payload, StatusCode,
+              # ExecutedVersion}) so the next stage receives the payload
+              # itself. Without this each stage is handed the envelope and
+              # fails deserialising on ExecutedVersion.
+              OutputPath = "$.Payload"
+
               Retry = [{
                 ErrorEquals    = ["States.TaskFailed"]
                 IntervalSeconds = 1
@@ -164,6 +170,12 @@ locals {
                 "FunctionName" = var.lambda_arns["embed"]
                 "Payload.$"    = "$"
               }
+
+              # Unwrap the lambda:invoke envelope ({Payload, StatusCode,
+              # ExecutedVersion}) so the next stage receives the payload
+              # itself. Without this each stage is handed the envelope and
+              # fails deserialising on ExecutedVersion.
+              OutputPath = "$.Payload"
 
               Retry = [{
                 ErrorEquals    = ["States.TaskFailed"]
@@ -189,6 +201,12 @@ locals {
                 "Payload.$"    = "$"
               }
 
+              # Unwrap the lambda:invoke envelope ({Payload, StatusCode,
+              # ExecutedVersion}) so the next stage receives the payload
+              # itself. Without this each stage is handed the envelope and
+              # fails deserialising on ExecutedVersion.
+              OutputPath = "$.Payload"
+
               Retry = [{
                 ErrorEquals    = ["States.TaskFailed"]
                 IntervalSeconds = 1
@@ -212,6 +230,12 @@ locals {
                 "FunctionName" = var.lambda_arns["route"]
                 "Payload.$"    = "$"
               }
+
+              # Unwrap the lambda:invoke envelope ({Payload, StatusCode,
+              # ExecutedVersion}) so the next stage receives the payload
+              # itself. Without this each stage is handed the envelope and
+              # fails deserialising on ExecutedVersion.
+              OutputPath = "$.Payload"
 
               Retry = [{
                 ErrorEquals    = ["States.TaskFailed"]

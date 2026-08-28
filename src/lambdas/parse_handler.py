@@ -13,12 +13,14 @@ from src.parsers.pdf import PdfParser
 from src.parsers.csv import CsvParser
 from src.parsers.json import JsonParser
 from src.parsers.html import HtmlParser
+from src.parsers.text import TextParser
 
 PARSERS = {
     "pdf": PdfParser,
     "csv": CsvParser,
     "json": JsonParser,
     "html": HtmlParser,
+    "text": TextParser,
 }
 
 

@@ -8,6 +8,7 @@ Available parsers:
 - csv: CSV/TSV files via pandas
 - json: JSON / JSONL / NDJSON files
 - html: HTML via BeautifulSoup
+- text: Plain text and Markdown (stdlib only)
 - audio: Audio files via Whisper (Phase 2)
 - image: Image files via ColPali (Phase 2)
 - video: Video files (Phase 2)

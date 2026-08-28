@@ -152,6 +152,13 @@ resource "aws_lambda_function" "this" {
     mode = "Active"
   }
 
+  # Terraform provisions the function; application code is delivered by the
+  # build/deploy pipeline (scripts/package_lambdas.py -> update-function-code).
+  # Without this, every apply would revert live code to the placeholder stub.
+  lifecycle {
+    ignore_changes = [filename, source_code_hash]
+  }
+
   depends_on = [data.archive_file.placeholder]
 }
 
