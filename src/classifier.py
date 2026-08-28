@@ -106,24 +106,11 @@ class RuleBasedClassifier(BaseLambda):
             duration_ms=int((time.perf_counter() - start) * 1000),
         )
 
+        # Carry every field forward from the input rather than listing them.
+        # Hand-listed constructions silently dropped any field added to the
+        # upstream model -- that is how source_bucket/source_key vanished
+        # between Chunk and Route.
         return ClassifiedChunk(
-            chunk_id=inp.chunk_id,
-            job_id=inp.job_id,
-            document_id=inp.document_id,
-            chunk_index=inp.chunk_index,
-            text=inp.text,
-            token_count=inp.token_count,
-            overlap_with_previous=inp.overlap_with_previous,
-            chunk_strategy=inp.chunk_strategy,
-            metadata=inp.metadata,
-            page=inp.page,
-            redaction_count=inp.redaction_count,
-            redaction_types=inp.redaction_types,
-            redaction_policy_version=inp.redaction_policy_version,
-            original_text_hash=inp.original_text_hash,
-            embedding=inp.embedding,
-            embedding_model=inp.embedding_model,
-            embedding_dim=inp.embedding_dim,
-            embedding_duration_ms=inp.embedding_duration_ms,
+            **inp.to_dict(),
             classification=classification,
         )

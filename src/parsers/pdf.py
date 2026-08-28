@@ -73,6 +73,8 @@ class PdfParser(BaseLambda):
 
             return ParsedDocument(
                 job_id=ctx.job_id,
+                source_bucket=bucket,
+                source_key=key,
                 detected_format="pdf",
                 text_content=text_content,
                 structured_elements=elements,

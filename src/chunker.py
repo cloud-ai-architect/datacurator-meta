@@ -195,6 +195,8 @@ class SemanticChunker(BaseLambda):
         return Chunk(
             job_id=ctx.job_id,
             document_id=document_id,
+            source_bucket=ctx.source_bucket,
+            source_key=ctx.source_key,
             chunk_index=index,
             text=text,
             token_count=token_count,

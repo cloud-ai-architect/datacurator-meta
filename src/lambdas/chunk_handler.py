@@ -29,7 +29,7 @@ def handler(event: dict, context: object) -> dict:
         environment=os.environ.get("ENVIRONMENT", "dev"),
     )
 
-    parsed = ParsedDocument(**event)
+    parsed = ParsedDocument.from_dict(event)
     chunker = SemanticChunker()
     chunks = chunker.handle(ctx, parsed)
 

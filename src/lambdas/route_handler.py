@@ -22,12 +22,12 @@ def handler(event: dict, context: object) -> dict:
     """
     ctx = JobContext(
         job_id=event.get("job_id", ""),
-        source_bucket="",
-        source_key="",
+        source_bucket=event.get("source_bucket", ""),
+        source_key=event.get("source_key", ""),
         environment=os.environ.get("ENVIRONMENT", "dev"),
     )
 
-    chunk = ClassifiedChunk(**event)
+    chunk = ClassifiedChunk.from_dict(event)
     router = ChunkRouter()
     result = router.handle(ctx, chunk)
 

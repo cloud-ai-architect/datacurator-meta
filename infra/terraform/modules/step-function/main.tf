@@ -45,16 +45,16 @@ locals {
         }
 
         Retry = [{
-          ErrorEquals    = ["States.TaskFailed"]
+          ErrorEquals     = ["States.TaskFailed"]
           IntervalSeconds = 1
-          MaxAttempts    = 3
-          BackoffRate    = 2.0
+          MaxAttempts     = 3
+          BackoffRate     = 2.0
         }]
 
         Catch = [{
           ErrorEquals = ["States.ALL"]
           ResultPath  = "$.error"
-          Next       = "Failed"
+          Next        = "Failed"
         }]
 
         Next = "Parse"
@@ -70,7 +70,7 @@ locals {
           "size_bytes.$"        = "$.Payload.size_bytes"
         }
         ResultPath = "$.parsed"
-        Next = "ParseLambda"
+        Next       = "ParseLambda"
       }
       ParseLambda = {
         Type     = "Task"
@@ -83,16 +83,16 @@ locals {
 
         ResultPath = "$.parseResult"
         Retry = [{
-          ErrorEquals    = ["States.TaskFailed"]
+          ErrorEquals     = ["States.TaskFailed"]
           IntervalSeconds = 1
-          MaxAttempts    = 3
-          BackoffRate    = 2.0
+          MaxAttempts     = 3
+          BackoffRate     = 2.0
         }]
 
         Catch = [{
           ErrorEquals = ["States.ALL"]
           ResultPath  = "$.error"
-          Next       = "Failed"
+          Next        = "Failed"
         }]
 
         Next = "ChunkLambda"
@@ -108,16 +108,16 @@ locals {
 
         ResultPath = "$.chunkResult"
         Retry = [{
-          ErrorEquals    = ["States.TaskFailed"]
+          ErrorEquals     = ["States.TaskFailed"]
           IntervalSeconds = 1
-          MaxAttempts    = 3
-          BackoffRate    = 2.0
+          MaxAttempts     = 3
+          BackoffRate     = 2.0
         }]
 
         Catch = [{
           ErrorEquals = ["States.ALL"]
           ResultPath  = "$.error"
-          Next       = "Failed"
+          Next        = "Failed"
         }]
 
         Next = "Chunk"
@@ -148,16 +148,16 @@ locals {
               OutputPath = "$.Payload"
 
               Retry = [{
-                ErrorEquals    = ["States.TaskFailed"]
+                ErrorEquals     = ["States.TaskFailed"]
                 IntervalSeconds = 1
-                MaxAttempts    = 3
-                BackoffRate    = 2.0
+                MaxAttempts     = 3
+                BackoffRate     = 2.0
               }]
 
               Catch = [{
                 ErrorEquals = ["States.ALL"]
                 ResultPath  = "$.error"
-                Next       = "ChunkFailed"
+                Next        = "ChunkFailed"
               }]
 
               Next = "EmbedChunk"
@@ -178,16 +178,16 @@ locals {
               OutputPath = "$.Payload"
 
               Retry = [{
-                ErrorEquals    = ["States.TaskFailed"]
+                ErrorEquals     = ["States.TaskFailed"]
                 IntervalSeconds = 1
-                MaxAttempts    = 3
-                BackoffRate    = 2.0
+                MaxAttempts     = 3
+                BackoffRate     = 2.0
               }]
 
               Catch = [{
                 ErrorEquals = ["States.ALL"]
                 ResultPath  = "$.error"
-                Next       = "ChunkFailed"
+                Next        = "ChunkFailed"
               }]
 
               Next = "ClassifyChunk"
@@ -208,16 +208,16 @@ locals {
               OutputPath = "$.Payload"
 
               Retry = [{
-                ErrorEquals    = ["States.TaskFailed"]
+                ErrorEquals     = ["States.TaskFailed"]
                 IntervalSeconds = 1
-                MaxAttempts    = 3
-                BackoffRate    = 2.0
+                MaxAttempts     = 3
+                BackoffRate     = 2.0
               }]
 
               Catch = [{
                 ErrorEquals = ["States.ALL"]
                 ResultPath  = "$.error"
-                Next       = "ChunkFailed"
+                Next        = "ChunkFailed"
               }]
 
               Next = "RouteChunk"
@@ -238,16 +238,16 @@ locals {
               OutputPath = "$.Payload"
 
               Retry = [{
-                ErrorEquals    = ["States.TaskFailed"]
+                ErrorEquals     = ["States.TaskFailed"]
                 IntervalSeconds = 1
-                MaxAttempts    = 3
-                BackoffRate    = 2.0
+                MaxAttempts     = 3
+                BackoffRate     = 2.0
               }]
 
               Catch = [{
                 ErrorEquals = ["States.ALL"]
                 ResultPath  = "$.error"
-                Next       = "ChunkFailed"
+                Next        = "ChunkFailed"
               }]
 
               End = true

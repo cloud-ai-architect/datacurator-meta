@@ -256,6 +256,42 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
   policy = data.aws_iam_policy_document.lambda_dynamodb.json
 }
 
+# S3 Vectors access for the lambda execution role.
+#
+# A separate `vectors` role exists below for privilege separation, but nothing
+# assumes it: BaseLambda builds a plain boto3 s3vectors client from the
+# function's own credentials. The route stage therefore failed with
+# AccessDenied on s3vectors:PutVectors. Granting the actions here, scoped to
+# this project's vector bucket and index, is what actually makes routing work.
+data "aws_iam_policy_document" "lambda_s3vectors" {
+  statement {
+    sid    = "VectorsDataPlane"
+    effect = "Allow"
+
+    actions = [
+      "s3vectors:GetVectors",
+      "s3vectors:PutVectors",
+      "s3vectors:DeleteVectors",
+      "s3vectors:ListVectors",
+      "s3vectors:QueryVectors",
+      "s3vectors:GetIndex",
+      "s3vectors:ListIndexes",
+      "s3vectors:GetVectorBucket",
+    ]
+
+    resources = [
+      "arn:aws:s3vectors:*:*:bucket/${var.buckets.vectors}",
+      "arn:aws:s3vectors:*:*:bucket/${var.buckets.vectors}/index/*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "lambda_s3vectors" {
+  name   = "s3vectors-access"
+  role   = aws_iam_role.lambda_exec.id
+  policy = data.aws_iam_policy_document.lambda_s3vectors.json
+}
+
 # Vectors role (assumed by lambda exec role)
 data "aws_iam_policy_document" "vectors_assume" {
   statement {

@@ -94,17 +94,25 @@ resource "aws_s3_bucket_versioning" "this" {
 
 resource "null_resource" "s3_vector_bucket" {
   triggers = {
-    bucket_name = var.bucket_name
-    index_name  = var.index_name
+    bucket_name   = var.bucket_name
+    index_name    = var.index_name
+    embedding_dim = var.embedding_dim
   }
 
+  # Delegates to a Python helper rather than an inline shell heredoc. The
+  # previous heredoc silently no-opped under Windows cmd.exe while still
+  # reporting success, so the index was never created and the Route stage
+  # failed at runtime with "The specified index could not be found".
+  # The helper is idempotent and exits non-zero on real failure.
   provisioner "local-exec" {
-    command = <<EOF
-echo "Creating S3 vector bucket: ${var.bucket_name}"
-aws s3vectors create-vector-bucket --vector-bucket-name "${var.bucket_name}" --region ap-south-1
-echo "Creating S3 vector index: ${var.index_name}"
-aws s3vectors create-index --vector-bucket-name "${var.bucket_name}" --index-name "${var.index_name}" --dimension ${var.embedding_dim} --distance-metric cosine --region ap-south-1
-EOF
+    command = join(" ", [
+      "python",
+      "${path.module}/../../../../scripts/ensure_vector_index.py",
+      "--bucket", var.bucket_name,
+      "--index", var.index_name,
+      "--dimension", tostring(var.embedding_dim),
+      "--region", "ap-south-1",
+    ])
   }
 }
 
@@ -133,7 +141,7 @@ output "vector_bucket" {
 }
 
 output "index_arn" {
-  value = "arn:aws:s3vectors:ap-south-1:${data.aws_caller_identity.current.account_id}:vector-bucket/${var.bucket_name}/index/${var.index_name}"
+  value = "arn:aws:s3vectors:ap-south-1:${data.aws_caller_identity.current.account_id}:bucket/${var.bucket_name}/index/${var.index_name}"
 }
 
 output "index_name" {

@@ -21,12 +21,12 @@ def handler(event: dict, context: object) -> dict:
     """
     ctx = JobContext(
         job_id=event.get("job_id", ""),
-        source_bucket="",
-        source_key="",
+        source_bucket=event.get("source_bucket", ""),
+        source_key=event.get("source_key", ""),
         environment=os.environ.get("ENVIRONMENT", "dev"),
     )
 
-    chunk = RedactedChunk(**event)
+    chunk = RedactedChunk.from_dict(event)
     embedder = BedrockEmbedder()
     result = embedder.handle(ctx, chunk)
 

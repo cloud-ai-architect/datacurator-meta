@@ -92,6 +92,8 @@ class JsonParser(BaseLambda):
 
             return ParsedDocument(
                 job_id=ctx.job_id,
+                source_bucket=bucket,
+                source_key=key,
                 detected_format="json",
                 text_content=text_content,
                 structured_elements=elements,

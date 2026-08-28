@@ -80,8 +80,8 @@ class ChunkRouter(BaseLambda):
             "job_id": {"S": chunk.job_id},
             "document_id": {"S": chunk.document_id},
             "chunk_index": {"N": str(chunk.chunk_index)},
-            "source_bucket": {"S": chunk.metadata.get("source_bucket", "")},
-            "source_key": {"S": chunk.metadata.get("source_key", "")},
+            # Provenance now travels on the chunk itself; fall back to the
+            # metadata bag for records written by older pipeline versions.
             "text_preview": {"S": chunk.text[:500]},  # truncate for table size limits
             "token_count": {"N": str(chunk.token_count)},
             "redaction_count": {"N": str(chunk.redaction_count)},
@@ -90,9 +90,20 @@ class ChunkRouter(BaseLambda):
             "created_at": {"S": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
             "ttl": {"N": str(int(time.time()) + 90 * 24 * 60 * 60)},  # 90 days
         }
+
+        # source_key backs a GSI, and DynamoDB rejects an empty string for any
+        # index key. Write these only when populated -- a sparse index is the
+        # intended behaviour for chunks whose origin is unknown.
+        source_bucket = chunk.source_bucket or chunk.metadata.get("source_bucket", "")
+        source_key = chunk.source_key or chunk.metadata.get("source_key", "")
+        if source_bucket:
+            item["source_bucket"] = {"S": source_bucket}
+        if source_key:
+            item["source_key"] = {"S": source_key}
         if chunk.classification:
             item["classification_category"] = {"S": chunk.classification.category}
-            item["classification_tags"] = {"SS": chunk.classification.tags} if chunk.classification.tags else {"SS": [""]}
+            if chunk.classification.tags:
+                item["classification_tags"] = {"SS": chunk.classification.tags}
             item["classification_confidence"] = {"N": str(chunk.classification.confidence)}
 
         self.dynamodb.put_item(TableName=self.metadata_table, Item=item)

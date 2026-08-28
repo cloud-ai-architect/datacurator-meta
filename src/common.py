@@ -20,7 +20,7 @@ import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field, fields, is_dataclass
-from typing import Any, ClassVar, Literal, get_args, get_origin
+from typing import Any, ClassVar, Literal, get_args, get_origin, get_type_hints
 
 import boto3
 import structlog
@@ -171,43 +171,63 @@ class DataCuratorModel:
         return asdict(self)
 
     @classmethod
+    def _resolved_hints(cls) -> dict[str, Any]:
+        """Field annotations resolved to real types.
+
+        `from __future__ import annotations` makes dataclasses store field
+        types as strings, so nested-dataclass detection has to resolve them
+        before it can recognise anything. Cached per class.
+        """
+        cached = cls.__dict__.get("_hints_cache")
+        if cached is not None:
+            return cached
+        try:
+            hints = get_type_hints(cls, globalns=globals())
+        except Exception:
+            hints = {}
+        setattr(cls, "_hints_cache", hints)
+        return hints
+
+    @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "DataCuratorModel":
         """Construct from a dict, ignoring unknown keys (replaces pydantic.model_validate).
 
-        Performs nested construction for dataclass-typed fields.
+        Performs nested construction for dataclass-typed fields, including
+        Optional[...] and list[...] of dataclasses.
         """
         if not isinstance(data, dict):
             raise TypeError(f"from_dict requires a dict, got {type(data).__name__}")
+
+        hints = cls._resolved_hints()
         known = {f.name for f in fields(cls)}
         kwargs: dict[str, Any] = {}
+
         for key, value in data.items():
             if key not in known:
-                continue  # ignore extras
-            # Recursively construct nested dataclasses
-            f = next((fld for fld in fields(cls) if fld.name == key), None)
-            if f is not None:
-                annotation = f.type
-                # Resolve string annotations
-                if isinstance(annotation, str) and "." in annotation:
-                    annotation = annotation.split(".")[-1]
-                # Check if this is a nested dataclass field
-                if isinstance(annotation, str):
-                    ann_name = annotation
-                else:
-                    ann_name = getattr(annotation, "__name__", str(annotation))
-                # Try to find a nested type
-                nested = globals().get(ann_name) or _resolve_typing(annotation)
-                if nested is not None and is_dataclass(nested) and isinstance(value, dict):
-                    value = nested.from_dict(value)
-                elif (
-                    nested is not None
-                    and is_dataclass(nested)
-                    and isinstance(value, list)
-                    and value
-                    and isinstance(value[0], dict)
-                ):
-                    value = [nested.from_dict(v) for v in value]
+                continue  # ignore extras (forward compat)
+
+            nested = _resolve_typing(hints.get(key))
+            if nested is not None and is_dataclass(nested):
+                if isinstance(value, dict):
+                    value = (
+                        nested.from_dict(value)
+                        if hasattr(nested, "from_dict")
+                        else nested(**value)
+                    )
+                elif isinstance(value, list):
+                    value = [
+                        (
+                            nested.from_dict(v)
+                            if hasattr(nested, "from_dict")
+                            else nested(**v)
+                        )
+                        if isinstance(v, dict)
+                        else v
+                        for v in value
+                    ]
+
             kwargs[key] = value
+
         return cls(**kwargs)
 
 
@@ -265,6 +285,11 @@ class ParsedDocument(DataCuratorModel):
     job_id: str
     detected_format: str
     text_content: str
+    # Provenance, threaded from DetectResult so downstream stages can record
+    # where a chunk came from. Without this the Route stage has no source and
+    # DynamoDB rejects the empty GSI key.
+    source_bucket: str = ""
+    source_key: str = ""
     structured_elements: list[StructuredElement] = field(default_factory=list)
     page_count: int | None = None
     language: str | None = None
@@ -280,6 +305,8 @@ class Chunk(DataCuratorModel):
     chunk_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     job_id: str = ""
     document_id: str = ""
+    source_bucket: str = ""
+    source_key: str = ""
     chunk_index: int = 0
     text: str = ""
     token_count: int = 0

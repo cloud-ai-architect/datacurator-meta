@@ -53,17 +53,11 @@ def handler(event: dict, context: object) -> dict:
     # Convert dict to Pydantic model
     from src.common import DetectResult
 
-    detect_result = DetectResult(**event)
+    detect_result = DetectResult.from_dict(event)
     result = parser.handle(ctx, detect_result)
 
-    return {
-        "job_id": result.job_id,
-        "detected_format": result.detected_format,
-        "text_content": result.text_content,
-        "page_count": result.page_count,
-        "structured_elements": [e.to_dict() for e in result.structured_elements],
-        "parse_duration_ms": result.parse_duration_ms,
-        "parser_version": result.parser_version,
-        "warnings": result.warnings,
-    }
+    # Serialise from the model rather than hand-listing fields: the previous
+    # literal dict silently dropped any field added to ParsedDocument, which
+    # is how source_bucket/source_key went missing downstream.
+    return result.to_dict()
 

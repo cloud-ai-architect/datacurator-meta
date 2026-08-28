@@ -15,8 +15,8 @@ def handler(event: dict, context: object) -> dict:
     """Handle a Step Function Map iteration for PII redaction."""
     ctx = JobContext(
         job_id=event.get("job_id", ""),
-        source_bucket="",
-        source_key="",
+        source_bucket=event.get("source_bucket", ""),
+        source_key=event.get("source_key", ""),
         environment=os.environ.get("ENVIRONMENT", "dev"),
     )
 
@@ -31,7 +31,7 @@ def handler(event: dict, context: object) -> dict:
     # Build a RedactedChunk, defaulting the redaction fields.
     if "redaction_count" not in chunk_data:
         from src.common import Chunk
-        base = Chunk(**{k: v for k, v in chunk_data.items() if k != "chunk"})
+        base = Chunk.from_dict({k: v for k, v in chunk_data.items() if k != "chunk"})
         chunk = RedactedChunk(
             **base.to_dict(),
             redaction_count=0,
@@ -40,7 +40,7 @@ def handler(event: dict, context: object) -> dict:
             original_text_hash="",
         )
     else:
-        chunk = RedactedChunk(**chunk_data)
+        chunk = RedactedChunk.from_dict(chunk_data)
 
     redactor = PiiRedactor()
     result = redactor.handle(ctx, chunk)

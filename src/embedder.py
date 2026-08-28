@@ -51,21 +51,15 @@ class BedrockEmbedder(BaseLambda):
             duration_ms=duration_ms,
         )
 
+        # Carry every field forward from the input rather than listing them.
+        # Hand-listed constructions silently dropped any field added to the
+        # upstream model -- that is how source_bucket/source_key vanished
+        # between Chunk and Route.
+        carried = inp.to_dict()
+        carried.pop("embedding_model", None)
+
         return EmbeddedChunk(
-            chunk_id=inp.chunk_id,
-            job_id=inp.job_id,
-            document_id=inp.document_id,
-            chunk_index=inp.chunk_index,
-            text=inp.text,
-            token_count=inp.token_count,
-            overlap_with_previous=inp.overlap_with_previous,
-            chunk_strategy=inp.chunk_strategy,
-            metadata=inp.metadata,
-            page=inp.page,
-            redaction_count=inp.redaction_count,
-            redaction_types=inp.redaction_types,
-            redaction_policy_version=inp.redaction_policy_version,
-            original_text_hash=inp.original_text_hash,
+            **carried,
             embedding=vector,
             embedding_model=EMBEDDING_MODEL_ID,
             embedding_dim=EMBEDDING_DIM,

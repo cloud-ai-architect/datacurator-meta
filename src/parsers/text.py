@@ -91,6 +91,8 @@ class TextParser(BaseLambda):
 
             return ParsedDocument(
                 job_id=ctx.job_id,
+                source_bucket=bucket,
+                source_key=key,
                 detected_format="text",
                 text_content=text,
                 structured_elements=elements,

@@ -87,19 +87,24 @@ class PiiRedactor(BaseLambda):
             duration_ms=int((time.perf_counter() - start) * 1000),
         )
 
-        # Build RedactedChunk from Chunk fields
+        # Carry every field forward from the input rather than listing them.
+        # Hand-listed constructions silently dropped any field added to the
+        # upstream model -- that is how source_bucket/source_key vanished
+        # between Chunk and Route.
+        carried = inp.to_dict()
+        carried["text"] = redacted_text
+        # inp may already be a RedactedChunk (the handler defaults the
+        # redaction fields on first pass), so drop what we are about to set.
+        for k in (
+            "redaction_count",
+            "redaction_types",
+            "redaction_policy_version",
+            "original_text_hash",
+        ):
+            carried.pop(k, None)
+
         return RedactedChunk(
-            chunk_id=inp.chunk_id,
-            job_id=inp.job_id,
-            document_id=inp.document_id,
-            chunk_index=inp.chunk_index,
-            text=redacted_text,
-            token_count=inp.token_count,
-            overlap_with_previous=inp.overlap_with_previous,
-            chunk_strategy=inp.chunk_strategy,
-            metadata=inp.metadata,
-            page=inp.page,
-            embedding_model=inp.embedding_model,
+            **carried,
             redaction_count=redaction_count,
             redaction_types=list(set(redaction_types)),
             redaction_policy_version=POLICY_VERSION,
