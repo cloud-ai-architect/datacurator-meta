@@ -109,21 +109,106 @@ resource "aws_iam_role" "github_actions" {
 }
 
 data "aws_iam_policy_document" "github_actions_inline" {
+  # Terraform state backend, addressed by ARN.
+  #
+  # This cannot be tag-conditioned. The state bucket is created by the
+  # bootstrap script rather than by Terraform, so it carries no Project tag,
+  # and S3 does not surface tags to IAM for HeadObject in any case. The
+  # previous policy allowed only tag-matched resources, so `terraform init`
+  # failed with 403 Forbidden when reading the state object.
   statement {
-    sid    = "AllActionsOnDatacurator"
+    sid    = "TerraformStateBackend"
     effect = "Allow"
+
     actions = [
-      "*",
-    ]
-    resources = [
-      "*",
+      "s3:ListBucket",
+      "s3:GetBucketVersioning",
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
     ]
 
-    condition {
-      test     = "StringEquals"
-      variable = "aws:ResourceTag/Project"
-      values   = [var.project_name]
-    }
+    resources = [
+      "arn:aws:s3:::${var.project_name}-tfstate-${var.environment}",
+      "arn:aws:s3:::${var.project_name}-tfstate-${var.environment}/*",
+    ]
+  }
+
+  statement {
+    sid    = "TerraformStateLock"
+    effect = "Allow"
+
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:DescribeTable",
+    ]
+
+    resources = [
+      "arn:aws:dynamodb:*:*:table/${var.project_name}-tfstate-lock-${var.environment}",
+    ]
+  }
+
+  # IAM is confined to this project's own roles and policies. The deploy role
+  # can manage the roles this stack creates and nothing else -- notably it
+  # cannot touch its own trust policy or any unrelated principal.
+  statement {
+    sid    = "ProjectScopedIam"
+    effect = "Allow"
+
+    actions = [
+      "iam:GetRole",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:UpdateRole",
+      "iam:TagRole",
+      "iam:UntagRole",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:GetRolePolicy",
+      "iam:PutRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:PassRole",
+    ]
+
+    resources = [
+      "arn:aws:iam::*:role/${var.name_prefix}-*",
+    ]
+  }
+
+  # Deploy permissions for the services this stack uses.
+  #
+  # Scoped by service rather than by resource: Terraform must create
+  # resources that do not exist yet, so they can be matched by neither ARN
+  # nor tag, and API Gateway, CloudFront and KMS address resources by
+  # generated ID. Enumerating services keeps this materially narrower than
+  # Action "*" while remaining workable for a deploy role.
+  statement {
+    sid    = "DeployProjectServices"
+    effect = "Allow"
+
+    actions = [
+      "lambda:*",
+      "s3:*",
+      "s3vectors:*",
+      "dynamodb:*",
+      "apigateway:*",
+      "states:*",
+      "events:*",
+      "cloudfront:*",
+      "kms:*",
+      "logs:*",
+      "resource-groups:*",
+      "tag:GetResources",
+      "tag:TagResources",
+      "tag:UntagResources",
+      "sts:GetCallerIdentity",
+    ]
+
+    resources = ["*"]
   }
 }
 
