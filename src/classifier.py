@@ -10,20 +10,17 @@ extended without code changes.
 
 from __future__ import annotations
 
-import re
 import time
 from pathlib import Path
 
 import yaml
 
 from src.common import (
-    ClassifiedChunk,
+    BaseLambda,
     Classification,
-    ClassificationError,
-    DataCuratorModel,
+    ClassifiedChunk,
     EmbeddedChunk,
     JobContext,
-    BaseLambda,
     stage,
 )
 
@@ -34,7 +31,7 @@ def _load_default_categories() -> dict[str, list[str]]:
     """Load categories from config/classifier/categories.yaml, with fallback."""
     default_path = Path(__file__).parent.parent / "config" / "classifier" / "categories.yaml"
     if default_path.exists():
-        with open(default_path) as f:
+        with Path(default_path).open() as f:
             data = yaml.safe_load(f) or {}
             return data.get("categories", {})
     # Fallback hardcoded set
@@ -60,7 +57,7 @@ class RuleBasedClassifier(BaseLambda):
     def setup(self) -> None:
         self.categories = _load_default_categories()
 
-    def handle(self, ctx: JobContext, inp: EmbeddedChunk) -> ClassifiedChunk:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: EmbeddedChunk) -> ClassifiedChunk:
         start = time.perf_counter()
         text_lower = inp.text.lower()
 

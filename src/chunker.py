@@ -12,13 +12,13 @@ from __future__ import annotations
 import time
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 
 from src.common import (
+    BaseLambda,
     Chunk,
     ChunkingError,
-    DataCuratorModel,
     JobContext,
-    BaseLambda,
     ParsedDocument,
     stage,
 )
@@ -38,11 +38,11 @@ class ChunkerConfig:
     chunk_strategy: str = "semantic-v1"
 
     @classmethod
-    def from_yaml(cls, path: str) -> "ChunkerConfig":
+    def from_yaml(cls, path: str) -> ChunkerConfig:
         """Load from YAML file."""
         import yaml
 
-        with open(path) as f:
+        with Path(path).open() as f:
             data = yaml.safe_load(f) or {}
         return cls(**data)
 
@@ -88,7 +88,7 @@ class SemanticChunker(BaseLambda):
     def setup(self) -> None:
         self.config = ChunkerConfig()  # default; can be overridden per source
 
-    def handle(self, ctx: JobContext, inp: ParsedDocument) -> list[Chunk]:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: ParsedDocument) -> list[Chunk]:
         start = time.perf_counter()
         chunks: list[Chunk] = []
         document_id = str(uuid.uuid4())
@@ -119,7 +119,16 @@ class SemanticChunker(BaseLambda):
             if unit_tokens > self.config.max_tokens:
                 # Flush current
                 if current_text:
-                    chunks.append(self._make_chunk(ctx, document_id, chunk_index, "\n\n".join(current_text), current_token_count, prev_text))
+                    chunks.append(
+                        self._make_chunk(
+                            ctx,
+                            document_id,
+                            chunk_index,
+                            "\n\n".join(current_text),
+                            current_token_count,
+                            prev_text,
+                        )
+                    )
                     prev_text = current_text[-1] if current_text else ""
                     chunk_index += 1
                     current_text = []
@@ -128,14 +137,25 @@ class SemanticChunker(BaseLambda):
                 # Hard-split
                 for sub in self._hard_split(unit):
                     sub_tokens = estimate_tokens(sub)
-                    chunks.append(self._make_chunk(ctx, document_id, chunk_index, sub, sub_tokens, prev_text))
+                    chunks.append(
+                        self._make_chunk(ctx, document_id, chunk_index, sub, sub_tokens, prev_text)
+                    )
                     prev_text = sub
                     chunk_index += 1
                 continue
 
             # If adding this unit exceeds max_tokens, flush current chunk
             if current_token_count + unit_tokens > self.config.max_tokens and current_text:
-                chunks.append(self._make_chunk(ctx, document_id, chunk_index, "\n\n".join(current_text), current_token_count, prev_text))
+                chunks.append(
+                    self._make_chunk(
+                        ctx,
+                        document_id,
+                        chunk_index,
+                        "\n\n".join(current_text),
+                        current_token_count,
+                        prev_text,
+                    )
+                )
                 prev_text = current_text[-1] if current_text else ""
                 chunk_index += 1
                 current_text = []
@@ -146,7 +166,16 @@ class SemanticChunker(BaseLambda):
 
         # Flush remaining
         if current_text:
-            chunks.append(self._make_chunk(ctx, document_id, chunk_index, "\n\n".join(current_text), current_token_count, prev_text))
+            chunks.append(
+                self._make_chunk(
+                    ctx,
+                    document_id,
+                    chunk_index,
+                    "\n\n".join(current_text),
+                    current_token_count,
+                    prev_text,
+                )
+            )
 
         self.log.info(
             "chunker.complete",

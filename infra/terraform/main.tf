@@ -218,6 +218,10 @@ resource "aws_s3_object" "ui" {
   )
 
   tags = local.common_tags
+
+  # The bucket is referenced by name via locals, so Terraform cannot
+  # infer this ordering and will otherwise upload before it exists.
+  depends_on = [module.ui_bucket]
 }
 
 resource "aws_s3_object" "ui_config" {
@@ -233,4 +237,8 @@ resource "aws_s3_object" "ui_config" {
 
   etag = md5("${module.apigateway.api_url}${var.environment}")
   tags = local.common_tags
+
+  # The bucket is referenced by name via locals, so Terraform cannot
+  # infer this ordering and will otherwise upload before it exists.
+  depends_on = [module.ui_bucket]
 }

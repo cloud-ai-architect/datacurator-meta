@@ -11,14 +11,13 @@ from __future__ import annotations
 import csv
 import io
 import time
-from typing import Any
 
 from src.common import (
+    BaseLambda,
     DataCuratorModel,
     JobContext,
     ParsedDocument,
     ParseError,
-    BaseLambda,
     StructuredElement,
     stage,
 )
@@ -34,7 +33,7 @@ class CsvParser(BaseLambda):
     def setup(self) -> None:
         pass
 
-    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:
         start = time.perf_counter()
         bucket = getattr(inp, "source_bucket", None) or ctx.source_bucket
         key = getattr(inp, "source_key", None) or ctx.source_key
@@ -52,7 +51,7 @@ class CsvParser(BaseLambda):
             reader = csv.reader(io.StringIO(body), delimiter=separator)
             rows = list(reader)
             if not rows:
-                raise ParseError(f"Empty CSV file: s3://{bucket}/{key}")
+                raise ParseError(f"Empty CSV file: s3://{bucket}/{key}")  # noqa: TRY301
 
             headers = [h.strip() for h in rows[0]]
             data_rows = rows[1 : MAX_ROWS + 1]
@@ -73,7 +72,7 @@ class CsvParser(BaseLambda):
             prose_parts: list[str] = []
             for row in data_rows:
                 row_text = " | ".join(
-                    f"{headers[i] if i < len(headers) else f'col{i+1}'}: {self._cell(row, i, headers)}"
+                    f"{headers[i] if i < len(headers) else f'col{i + 1}'}: {self._cell(row, i, headers)}"
                     for i in range(len(row))
                     if self._cell(row, i, headers)
                 )
@@ -81,9 +80,8 @@ class CsvParser(BaseLambda):
                     prose_parts.append(row_text)
 
             text_content = (
-                f"# CSV Data ({len(data_rows)}{'+' if truncated else ''} of {len(rows)-1} rows)\n\n"
-                f"{md_table}\n\n## Row-by-row\n\n"
-                + "\n".join(prose_parts)
+                f"# CSV Data ({len(data_rows)}{'+' if truncated else ''} of {len(rows) - 1} rows)\n\n"
+                f"{md_table}\n\n## Row-by-row\n\n" + "\n".join(prose_parts)
             )
 
             elements = [

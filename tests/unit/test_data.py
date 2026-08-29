@@ -2,14 +2,24 @@
 
 from __future__ import annotations
 
+# data-curator/ is hyphenated, so it is not importable as a package.
+# Load the module by path rather than renaming a directory that other
+# tooling refers to.
+import importlib.util
 import json
+import pathlib
 
-from data_curator.generate import (
-    make_csv,
-    make_html_faq,
-    make_jsonl,
-    make_markdown_policy,
+_spec = importlib.util.spec_from_file_location(
+    "generate",
+    pathlib.Path(__file__).resolve().parents[2] / "data-curator" / "generate.py",
 )
+generate = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(generate)
+
+make_csv = generate.make_csv
+make_html_faq = generate.make_html_faq
+make_jsonl = generate.make_jsonl
+make_markdown_policy = generate.make_markdown_policy
 
 
 class TestCsvGeneration:

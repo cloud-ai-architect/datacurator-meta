@@ -7,11 +7,11 @@ Phase 2 will extract audio track and feed to audio parser.
 from __future__ import annotations
 
 from src.common import (
+    BaseLambda,
     DataCuratorModel,
     JobContext,
     ParsedDocument,
     ParseError,
-    BaseLambda,
     stage,
 )
 
@@ -23,7 +23,7 @@ class VideoParser(BaseLambda):
     def setup(self) -> None:
         pass
 
-    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:
         raise ParseError(
             "Video parsing not yet implemented (Phase 2). "
             "Track issue: https://github.com/vijaymadhu/datacurator-meta/issues"

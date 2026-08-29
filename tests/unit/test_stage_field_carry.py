@@ -9,16 +9,14 @@ the empty GSI key. These tests fail if a stage stops carrying fields.
 from __future__ import annotations
 
 import pytest
-
+from src.classifier import RuleBasedClassifier
 from src.common import (
     Chunk,
     EmbeddedChunk,
     JobContext,
     RedactedChunk,
 )
-from src.classifier import RuleBasedClassifier
 from src.redactor import PiiRedactor
-
 
 BUCKET = "datacurator-dev-raw"
 KEY = "inbox/report.md"
@@ -26,9 +24,7 @@ KEY = "inbox/report.md"
 
 @pytest.fixture
 def ctx():
-    return JobContext(
-        job_id="j1", source_bucket=BUCKET, source_key=KEY, environment="dev"
-    )
+    return JobContext(job_id="j1", source_bucket=BUCKET, source_key=KEY, environment="dev")
 
 
 @pytest.fixture

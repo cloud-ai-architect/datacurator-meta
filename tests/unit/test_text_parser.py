@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from src.parsers.text import _decode, TextParser
+from src.parsers.text import TextParser, _decode
 
 
 class TestDecode:
     def test_utf8(self):
-        text, enc, warnings = _decode("hello world".encode("utf-8"))
+        text, enc, warnings = _decode(b"hello world")
         assert text == "hello world"
         assert enc == "utf-8"
         assert warnings == []

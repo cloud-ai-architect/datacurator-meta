@@ -9,7 +9,6 @@ from src.common import (
     StructuredElement,
 )
 
-
 CHUNK = {
     "chunk_id": "c1",
     "job_id": "j1",
@@ -30,15 +29,17 @@ class TestNestedConstruction:
         assert c.classification.category == "clinical"
 
     def test_list_of_dataclasses_is_constructed(self):
-        pd = ParsedDocument.from_dict({
-            "job_id": "j1",
-            "detected_format": "text",
-            "text_content": "x",
-            "structured_elements": [
-                {"element_type": "header", "text": "H", "metadata": {}, "position": 0},
-                {"element_type": "paragraph", "text": "P", "metadata": {}, "position": 1},
-            ],
-        })
+        pd = ParsedDocument.from_dict(
+            {
+                "job_id": "j1",
+                "detected_format": "text",
+                "text_content": "x",
+                "structured_elements": [
+                    {"element_type": "header", "text": "H", "metadata": {}, "position": 0},
+                    {"element_type": "paragraph", "text": "P", "metadata": {}, "position": 1},
+                ],
+            }
+        )
         assert all(isinstance(e, StructuredElement) for e in pd.structured_elements)
         assert pd.structured_elements[0].element_type == "header"
 
@@ -62,14 +63,19 @@ class TestNestedConstruction:
         assert c.chunk_id == "c1"
 
     def test_empty_list_stays_empty(self):
-        pd = ParsedDocument.from_dict({
-            "job_id": "j1", "detected_format": "text",
-            "text_content": "x", "structured_elements": [],
-        })
+        pd = ParsedDocument.from_dict(
+            {
+                "job_id": "j1",
+                "detected_format": "text",
+                "text_content": "x",
+                "structured_elements": [],
+            }
+        )
         assert pd.structured_elements == []
 
     def test_non_dict_input_raises(self):
-        import pytest
+        import pytest  # noqa: PLC0415 - scoped to this case
+
         with pytest.raises(TypeError):
             ClassifiedChunk.from_dict(["not", "a", "dict"])
 

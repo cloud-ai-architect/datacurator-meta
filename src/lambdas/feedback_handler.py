@@ -6,14 +6,14 @@ import json
 import os
 import time
 import uuid
+from typing import Any
 
 import boto3
-
 
 VALID_LABELS = {"misclassified", "misrouted", "good"}
 
 
-def handler(event: dict, context: object) -> dict:
+def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
     """Handle a feedback submission.
 
     Event shape (API Gateway HTTP API v2):
@@ -76,7 +76,7 @@ def handler(event: dict, context: object) -> dict:
     }
 
 
-def _error(status: int, code: str, message: str) -> dict:
+def _error(status: int, code: str, message: str) -> dict[str, Any]:
     return {
         "statusCode": status,
         "headers": {"Content-Type": "application/json"},

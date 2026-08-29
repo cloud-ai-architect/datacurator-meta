@@ -7,12 +7,13 @@ previous stage, then invokes it.
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from src.common import JobContext, ParseError
-from src.parsers.pdf import PdfParser
 from src.parsers.csv import CsvParser
-from src.parsers.json import JsonParser
 from src.parsers.html import HtmlParser
+from src.parsers.json import JsonParser
+from src.parsers.pdf import PdfParser
 from src.parsers.text import TextParser
 
 PARSERS = {
@@ -24,7 +25,7 @@ PARSERS = {
 }
 
 
-def handler(event: dict, context: object) -> dict:
+def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
     """Handle a Step Function invocation for parsing.
 
     Event shape (from previous Detect state):
@@ -60,4 +61,3 @@ def handler(event: dict, context: object) -> dict:
     # literal dict silently dropped any field added to ParsedDocument, which
     # is how source_bucket/source_key went missing downstream.
     return result.to_dict()
-

@@ -1,21 +1,19 @@
-"""Unit tests for common models and base classes."""
+"""Unit tests for common models and base classes.
+
+The models are stdlib dataclasses, not pydantic: invalid Literal values
+raise TypeError from the __post_init__ check rather than pydantic's
+ValidationError.
+"""
 
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
 from src.common import (
     Chunk,
-    ClassifiedChunk,
     Classification,
-    DataCuratorModel,
     DetectResult,
-    EmbeddedChunk,
     JobContext,
     ParsedDocument,
-    RedactedChunk,
-    StructuredElement,
 )
 
 
@@ -35,7 +33,7 @@ class TestDetectResult:
         assert r.size_bytes == 1024
 
     def test_invalid_format(self):
-        with pytest.raises(ValidationError):
+        with pytest.raises(TypeError):
             DetectResult(
                 job_id="job-1",
                 source_bucket="bucket",
@@ -90,7 +88,7 @@ class TestClassification:
         assert c.confidence == 0.5
 
     def test_invalid_confidence(self):
-        with pytest.raises(ValidationError):
+        with pytest.raises(TypeError):
             Classification(
                 category="general",
                 tags=[],

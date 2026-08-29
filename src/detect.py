@@ -11,14 +11,14 @@ Returns a DetectResult that downstream stages use to pick the right parser.
 from __future__ import annotations
 
 import time
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from src.common import (
+    BaseLambda,
     DataCuratorModel,
     DetectResult,
     FormatDetectionError,
     JobContext,
-    BaseLambda,
     stage,
 )
 
@@ -85,7 +85,7 @@ class FormatDetector(BaseLambda):
         # No special setup needed
         pass
 
-    def handle(self, ctx: JobContext, inp: dict) -> DetectResult:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: dict[str, Any]) -> DetectResult:
         """Detect format from S3 object metadata.
 
         `inp` is expected to be a dict with: bucket, key, content_type, size

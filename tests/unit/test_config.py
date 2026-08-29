@@ -13,7 +13,7 @@ class TestChunkerConfigs:
     def test_default_exists(self):
         path = CONFIG_DIR / "chunkers" / "default.yaml"
         assert path.exists()
-        with open(path) as f:
+        with Path(path).open() as f:
             data = yaml.safe_load(f)
         assert "target_tokens" in data
         assert "max_tokens" in data
@@ -24,7 +24,7 @@ class TestEmbedderConfigs:
     def test_titan_v2_exists(self):
         path = CONFIG_DIR / "embedders" / "titan-v2.yaml"
         assert path.exists()
-        with open(path) as f:
+        with Path(path).open() as f:
             data = yaml.safe_load(f)
         assert data["model_id"] == "amazon.titan-embed-text-v2:0"
         assert data["dimensions"] == 1024
@@ -35,12 +35,12 @@ class TestClassifierConfig:
     def test_categories_exist(self):
         path = CONFIG_DIR / "classifier" / "categories.yaml"
         assert path.exists()
-        with open(path) as f:
+        with Path(path).open() as f:
             data = yaml.safe_load(f)
         assert "categories" in data
         assert "general" in data["categories"]
         # Every category should have a list of keywords
-        for cat, keywords in data["categories"].items():
+        for _cat, keywords in data["categories"].items():
             assert isinstance(keywords, list)
 
 

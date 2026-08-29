@@ -9,11 +9,11 @@ from __future__ import annotations
 import time
 
 from src.common import (
+    BaseLambda,
     DataCuratorModel,
     JobContext,
     ParsedDocument,
     ParseError,
-    BaseLambda,
     StructuredElement,
     stage,
 )
@@ -28,7 +28,7 @@ class HtmlParser(BaseLambda):
 
         self._BeautifulSoup = BeautifulSoup
 
-    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:
         start = time.perf_counter()
         bucket = getattr(inp, "source_bucket", None) or ctx.source_bucket
         key = getattr(inp, "source_key", None) or ctx.source_key

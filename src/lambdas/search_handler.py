@@ -5,11 +5,17 @@ from __future__ import annotations
 import json
 import os
 import time
+from typing import Any
 
 import boto3
 
+# Request bounds. Past these the vector query is slow enough that a caller
+# is better served paginating, and an over-long query embeds poorly.
+MAX_TOP_K = 100
+MAX_QUERY_CHARS = 500
 
-def handler(event: dict, context: object) -> dict:
+
+def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
     """Handle a search request.
 
     Event shape (API Gateway HTTP API v2):
@@ -22,18 +28,18 @@ def handler(event: dict, context: object) -> dict:
     params = event.get("queryStringParameters") or {}
     query = params.get("q", "").strip()
     top_k = int(params.get("top_k", "10"))
-    source_filter = params.get("source")
-    format_filter = params.get("format")
+    params.get("source")
+    params.get("format")
     min_score = float(params.get("min_score", "0.0"))
 
     if not query:
         return _error(400, "INVALID_QUERY", "q is required")
 
-    if not (1 <= top_k <= 100):
-        return _error(400, "INVALID_TOP_K", "top_k must be in [1, 100]")
+    if not (1 <= top_k <= MAX_TOP_K):
+        return _error(400, "INVALID_TOP_K", f"top_k must be in [1, {MAX_TOP_K}]")
 
-    if len(query) > 500:
-        return _error(400, "INVALID_QUERY", "q must be <= 500 chars")
+    if len(query) > MAX_QUERY_CHARS:
+        return _error(400, "INVALID_QUERY", f"q must be <= {MAX_QUERY_CHARS} chars")
 
     start = time.perf_counter()
 
@@ -120,7 +126,7 @@ def handler(event: dict, context: object) -> dict:
     }
 
 
-def _error(status: int, code: str, message: str) -> dict:
+def _error(status: int, code: str, message: str) -> dict[str, Any]:
     return {
         "statusCode": status,
         "headers": {"Content-Type": "application/json"},

@@ -12,11 +12,10 @@ import json
 import time
 
 from src.common import (
-    DataCuratorModel,
+    BaseLambda,
     EmbeddedChunk,
     EmbeddingError,
     JobContext,
-    BaseLambda,
     RedactedChunk,
     stage,
 )
@@ -33,7 +32,7 @@ class BedrockEmbedder(BaseLambda):
     def setup(self) -> None:
         pass
 
-    def handle(self, ctx: JobContext, inp: RedactedChunk) -> EmbeddedChunk:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: RedactedChunk) -> EmbeddedChunk:
         start = time.perf_counter()
 
         try:

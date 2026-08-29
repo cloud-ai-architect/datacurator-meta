@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from src.common import ClassifiedChunk, JobContext
 from src.router import ChunkRouter
 
 
-def handler(event: dict, context: object) -> dict:
+def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
     """Handle a Step Function invocation for routing to storage.
 
     Event shape (from previous Classify state):

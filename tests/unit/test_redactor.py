@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from src.redactor import FALLBACK_PATTERNS, POLICY_VERSION
 
 

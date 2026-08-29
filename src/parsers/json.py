@@ -10,21 +10,24 @@ Renders as YAML-like text (better than JSON for semantic search).
 
 from __future__ import annotations
 
-import io
 import json
 import time
 
 import yaml
 
 from src.common import (
+    BaseLambda,
     DataCuratorModel,
     JobContext,
     ParsedDocument,
     ParseError,
-    BaseLambda,
     StructuredElement,
     stage,
 )
+
+# Values longer than this are summarised rather than inlined; a single
+# oversized field would otherwise dominate the chunk.
+MAX_VALUE_CHARS = 500
 
 
 @stage(name="parse-json", input_model=DataCuratorModel, output_model=ParsedDocument)
@@ -34,7 +37,7 @@ class JsonParser(BaseLambda):
     def setup(self) -> None:
         pass
 
-    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:
         start = time.perf_counter()
         bucket = getattr(inp, "source_bucket", None) or ctx.source_bucket
         key = getattr(inp, "source_key", None) or ctx.source_key
@@ -71,7 +74,9 @@ class JsonParser(BaseLambda):
             text_parts: list[str] = []
             for i, rec in enumerate(records[:500]):
                 try:
-                    text_parts.append(f"--- Record {i + 1} ---\n{yaml.safe_dump(rec, sort_keys=False, allow_unicode=True)}")
+                    text_parts.append(
+                        f"--- Record {i + 1} ---\n{yaml.safe_dump(rec, sort_keys=False, allow_unicode=True)}"
+                    )
                 except yaml.YAMLError as exc:
                     warnings.append(f"record_{i}_yaml_dump_failed: {exc}")
 
@@ -87,7 +92,7 @@ class JsonParser(BaseLambda):
             ]
 
             parse_duration_ms = int((time.perf_counter() - start) * 1000)
-            if len(records) > 500:
+            if len(records) > MAX_VALUE_CHARS:
                 warnings.append(f"truncated_to_500_records (full={len(records)})")
 
             return ParsedDocument(

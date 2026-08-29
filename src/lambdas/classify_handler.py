@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from src.classifier import RuleBasedClassifier
 from src.common import EmbeddedChunk, JobContext
 
 
-def handler(event: dict, context: object) -> dict:
+def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
     """Handle a Step Function invocation for classification.
 
     Event shape (from previous Embed state):
@@ -31,4 +32,3 @@ def handler(event: dict, context: object) -> dict:
     result = classifier.handle(ctx, chunk)
 
     return result.to_dict()
-

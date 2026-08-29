@@ -13,14 +13,13 @@ Designed to be:
 from __future__ import annotations
 
 import json
-import time
 from dataclasses import dataclass
 from typing import Any
 
 import boto3
-from botocore.awsrequest import AWSRequest
-from botocore.auth import SigV4Auth
 import requests
+from botocore.auth import SigV4Auth
+from botocore.awsrequest import AWSRequest
 
 
 @dataclass
@@ -93,7 +92,7 @@ class DataCuratorClient:
             "the SSM Parameter Store lookup. See deploy runbook."
         )
 
-    def _sign_and_call(self, method: str, path: str, body: dict | None = None) -> dict:
+    def _sign_and_call(self, method: str, path: str, body: dict | None = None) -> dict[str, Any]:
         """Sign a request with SigV4 and call the API."""
         url = f"{self.api_url}{path}"
         body_str = json.dumps(body) if body else None
@@ -144,7 +143,9 @@ class DataCuratorClient:
             params["min_score"] = min_score
 
         # Build path with query string
-        path = "/search?" + "&".join(f"{k}={requests.utils.quote(str(v))}" for k, v in params.items())
+        path = "/search?" + "&".join(
+            f"{k}={requests.utils.quote(str(v))}" for k, v in params.items()
+        )
 
         data = self._sign_and_call("GET", path)
 
@@ -178,7 +179,7 @@ class DataCuratorClient:
         label: str,
         suggested_class: str | None = None,
         notes: str | None = None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Submit feedback for a chunk (for the self-learning loop).
 
         Args:

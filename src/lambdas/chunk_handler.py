@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from src.chunker import SemanticChunker
 from src.common import JobContext, ParsedDocument
 
 
-def handler(event: dict, context: object) -> dict:
+def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
     """Handle a Step Function invocation for chunking.
 
     Event shape (from previous Parse state):
@@ -38,4 +39,3 @@ def handler(event: dict, context: object) -> dict:
         "chunk_count": len(chunks),
         "chunks": [c.to_dict() for c in chunks],
     }
-

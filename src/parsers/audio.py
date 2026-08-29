@@ -6,14 +6,12 @@ Phase 2 will add Whisper-based transcription.
 
 from __future__ import annotations
 
-import time
-
 from src.common import (
+    BaseLambda,
     DataCuratorModel,
     JobContext,
     ParsedDocument,
     ParseError,
-    BaseLambda,
     stage,
 )
 
@@ -25,7 +23,7 @@ class AudioParser(BaseLambda):
     def setup(self) -> None:
         pass
 
-    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:
         # TODO(Phase 2): integrate Whisper
         # - Upload audio to S3
         # - Call Whisper (via SageMaker async endpoint or local model)

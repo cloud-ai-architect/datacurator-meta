@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import os
 import uuid
+from typing import Any
 
 from src.common import JobContext
 from src.detect import FormatDetector
 
 
-def _extract_s3_event(event: dict) -> dict:
+def _extract_s3_event(event: dict[str, Any]) -> dict[str, Any]:
     """Extract bucket/key/size from either a transformed event or a raw S3 EventBridge event.
 
     Supports:
@@ -33,11 +34,11 @@ def _extract_s3_event(event: dict) -> dict:
     size = object_obj.get("size", 0) if isinstance(object_obj, dict) else 0
     if bucket and key:
         return {"bucket": bucket, "key": key, "size": size}
-    # Fallback: empty
+    # Neither form matched; the caller decides how to treat an unknown source.
     return {"bucket": "", "key": "", "size": 0}
 
 
-def handler(event: dict, context: object) -> dict:
+def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
     """Handle a Step Function invocation for format detection."""
     job_id = event.get("job_id") or str(uuid.uuid4())
     environment = os.environ.get("ENVIRONMENT", "dev")

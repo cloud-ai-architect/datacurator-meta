@@ -20,12 +20,11 @@ from pathlib import Path
 from typing import ClassVar
 
 from src.common import (
+    BaseLambda,
     Chunk,
     DataCuratorModel,
     JobContext,
-    BaseLambda,
     RedactedChunk,
-    RedactionError,
     stage,
 )
 
@@ -61,7 +60,7 @@ class PiiRedactor(BaseLambda):
         self._policy_path = Path(__file__).parent.parent / "policies" / "pii-redaction.rego"
         # Phase 2: load OPA bundle here
 
-    def handle(self, ctx: JobContext, inp: Chunk) -> RedactedChunk:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: Chunk) -> RedactedChunk:
         start = time.perf_counter()
         text = inp.text
         redaction_count = 0

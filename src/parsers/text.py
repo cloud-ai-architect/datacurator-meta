@@ -16,11 +16,11 @@ import re
 import time
 
 from src.common import (
+    BaseLambda,
     DataCuratorModel,
     JobContext,
     ParsedDocument,
     ParseError,
-    BaseLambda,
     StructuredElement,
     stage,
 )
@@ -73,7 +73,7 @@ def _decode(body: bytes) -> tuple[str, str, list[str]]:
 class TextParser(BaseLambda):
     """Parse plain text and Markdown into text + structured elements."""
 
-    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:
         start = time.perf_counter()
         bucket = getattr(inp, "source_bucket", None) or ctx.source_bucket
         key = getattr(inp, "source_key", None) or ctx.source_key
@@ -167,12 +167,7 @@ class TextParser(BaseLambda):
                     continue
 
                 # Setext: a non-empty line underlined by === or ---
-                if (
-                    _SETEXT_UNDERLINE.match(line)
-                    and i > 0
-                    and lines[i - 1].strip()
-                    and buffer
-                ):
+                if _SETEXT_UNDERLINE.match(line) and i > 0 and lines[i - 1].strip() and buffer:
                     title = buffer.pop().strip()
                     flush_paragraph()
                     elements.append(

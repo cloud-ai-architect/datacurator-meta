@@ -7,11 +7,11 @@ Phase 2 will add ColPali-based visual embeddings.
 from __future__ import annotations
 
 from src.common import (
+    BaseLambda,
     DataCuratorModel,
     JobContext,
     ParsedDocument,
     ParseError,
-    BaseLambda,
     stage,
 )
 
@@ -23,7 +23,7 @@ class ImageParser(BaseLambda):
     def setup(self) -> None:
         pass
 
-    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> ParsedDocument:
         # TODO(Phase 2): integrate ColPali
         raise ParseError(
             "Image parsing not yet implemented (Phase 2). "

@@ -10,14 +10,13 @@ storage destinations:
 from __future__ import annotations
 
 import time
-from decimal import Decimal
 from typing import Any
 
 from src.common import (
+    BaseLambda,
     ClassifiedChunk,
     DataCuratorModel,
     JobContext,
-    BaseLambda,
     RoutingError,
     stage,
 )
@@ -37,7 +36,7 @@ class ChunkRouter(BaseLambda):
         self.jobs_table = os.environ.get("JOBS_TABLE", "datacurator-jobs-dev")
         self.environment = os.environ.get("ENVIRONMENT", "dev")
 
-    def handle(self, ctx: JobContext, inp: ClassifiedChunk) -> ClassifiedChunk:  # type: ignore[override]
+    def handle(self, ctx: JobContext, inp: ClassifiedChunk) -> ClassifiedChunk:
         start = time.perf_counter()
 
         try:
@@ -67,7 +66,9 @@ class ChunkRouter(BaseLambda):
                     "metadata": {
                         "source": chunk.metadata.get("source", "unknown"),
                         "format": chunk.metadata.get("format", "unknown"),
-                        "category": chunk.classification.category if chunk.classification else "general",
+                        "category": chunk.classification.category
+                        if chunk.classification
+                        else "general",
                     },
                 }
             ],

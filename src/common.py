@@ -18,12 +18,14 @@ import functools
 import time
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 from dataclasses import asdict, dataclass, field, fields, is_dataclass
-from typing import Any, ClassVar, Literal, get_args, get_origin, get_type_hints
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, get_args, get_origin, get_type_hints
 
 import boto3
 import structlog
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = structlog.get_logger()
 
@@ -77,7 +79,7 @@ class JobContext:
     source_bucket: str
     source_key: str
     environment: str
-    started_at: float = 0.0
+    started_at: float = field(default_factory=time.time)
     cumulative_cost_usd: float = 0.0
     custom: dict[str, Any] | None = None
 
@@ -103,40 +105,38 @@ def _check_literal(value: Any, annotation: Any) -> None:
     if get_origin(annotation) is Literal:
         allowed = get_args(annotation)
         if value not in allowed:
-            raise TypeError(
-                f"Value {value!r} not in allowed Literal values: {allowed}"
-            )
+            raise TypeError(f"Value {value!r} not in allowed Literal values: {allowed}")
 
 
 def _check_types(obj: Any) -> None:
-    """Recursively type-check fields with Literal annotations."""
+    """Validate Literal-annotated fields, recursing into nested models.
+
+    Annotations have to be resolved rather than string-matched. With
+    `from __future__ import annotations` a field's type is the source text,
+    so a Literal reached through an alias -- `detected_format: DetectedFormat`
+    -- reads as "DetectedFormat" and a naive startswith("Literal[") check
+    never fires. That is how an unrecognised format used to pass validation
+    and fail much later in the parser dispatch instead.
+    """
     if not is_dataclass(obj):
         return
+
+    try:
+        hints = get_type_hints(type(obj), globalns=globals())
+    except Exception:
+        hints = {}
+
     for f in fields(obj):
         if f.name.startswith("_"):
             continue
         value = getattr(obj, f.name)
-        annotation = f.type
-        # Resolve string annotations (from __future__ import annotations)
-        if isinstance(annotation, str):
-            # We use a small set, so just check by trying
-            try:
-                if annotation.startswith("Literal[") or annotation.startswith("typing.Literal["):
-                    # Naive parse for "Literal['a', 'b']"
-                    inner = annotation.split("Literal[")[1].rstrip("]")
-                    allowed = tuple(s.strip().strip("'\"") for s in inner.split(","))
-                    if value not in allowed:
-                        raise TypeError(
-                            f"Field {f.name}: {value!r} not in {allowed}"
-                        )
-            except (IndexError, ValueError):
-                pass
-        else:
-            try:
-                _check_literal(value, annotation)
-            except TypeError as e:
-                raise TypeError(f"Field {f.name}: {e}") from e
-        # Recurse into nested dataclass
+
+        annotation = hints.get(f.name, f.type)
+        try:
+            _check_literal(value, annotation)
+        except TypeError as e:
+            raise TypeError(f"Field {f.name}: {e}") from e
+
         if is_dataclass(value):
             _check_types(value)
         elif isinstance(value, list) and value and is_dataclass(value[0]):
@@ -155,6 +155,10 @@ class DataCuratorModel:
     - Literal type validation in __post_init__
     - Extra fields are ignored (lenient, for forward compat)
     """
+
+    # Populated lazily by _resolved_hints(); declared so the cache is part of
+    # the class contract rather than an attribute conjured at runtime.
+    _hints_cache: ClassVar[dict[str, Any] | None] = None
 
     def __post_init__(self) -> None:
         # Strip whitespace from all string fields
@@ -185,11 +189,11 @@ class DataCuratorModel:
             hints = get_type_hints(cls, globalns=globals())
         except Exception:
             hints = {}
-        setattr(cls, "_hints_cache", hints)
+        cls._hints_cache = hints
         return hints
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "DataCuratorModel":
+    def from_dict(cls, data: dict[str, Any]) -> Self:
         """Construct from a dict, ignoring unknown keys (replaces pydantic.model_validate).
 
         Performs nested construction for dataclass-typed fields, including
@@ -210,17 +214,11 @@ class DataCuratorModel:
             if nested is not None and is_dataclass(nested):
                 if isinstance(value, dict):
                     value = (
-                        nested.from_dict(value)
-                        if hasattr(nested, "from_dict")
-                        else nested(**value)
+                        nested.from_dict(value) if hasattr(nested, "from_dict") else nested(**value)
                     )
                 elif isinstance(value, list):
                     value = [
-                        (
-                            nested.from_dict(v)
-                            if hasattr(nested, "from_dict")
-                            else nested(**v)
-                        )
+                        (nested.from_dict(v) if hasattr(nested, "from_dict") else nested(**v))
                         if isinstance(v, dict)
                         else v
                         for v in value
@@ -252,6 +250,10 @@ def _resolve_typing(annotation: Any) -> Any:
 
 # --- Inter-stage data models (dataclass-based) ---
 
+# The formats the pipeline can dispatch on. Kept next to the models so the
+# parser table and the type cannot drift apart.
+DetectedFormat = Literal["pdf", "csv", "json", "html", "text", "audio", "image", "video", "unknown"]
+
 
 @dataclass
 class DetectResult(DataCuratorModel):
@@ -260,7 +262,9 @@ class DetectResult(DataCuratorModel):
     job_id: str
     source_bucket: str
     source_key: str
-    detected_format: str
+    # Closed set: an unrecognised value here would otherwise surface much
+    # later as a KeyError in the parser dispatch table.
+    detected_format: DetectedFormat
     detected_encoding: str = "utf-8"
     magic_bytes_verified: bool = True
     detected_at: str = ""
@@ -331,6 +335,13 @@ class RedactedChunk(Chunk):
 class Classification(DataCuratorModel):
     """A classification label assigned to a chunk."""
 
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        # A confidence outside [0, 1] is a bug in the classifier, not a
+        # low-quality result; failing loudly beats storing it.
+        if not 0.0 <= self.confidence <= 1.0:
+            raise TypeError(f"confidence must be in [0, 1], got {self.confidence}")
+
     category: str = "general"
     tags: list[str] = field(default_factory=list)
     confidence: float = 0.0
@@ -384,7 +395,7 @@ class BaseLambda(ABC):
         self.s3vectors: Any = None
         self._setup_done = False
 
-    def setup(self) -> None:
+    def setup(self) -> None:  # noqa: B027 - optional hook; subclasses need not override
         """Lazy initialization of AWS clients. Override for custom setup."""
 
     def ensure_setup(self) -> None:
@@ -397,7 +408,9 @@ class BaseLambda(ABC):
             self._setup_done = True
 
     @abstractmethod
-    def handle(self, ctx: JobContext, inp: DataCuratorModel) -> DataCuratorModel | list[DataCuratorModel]:
+    def handle(
+        self, ctx: JobContext, inp: DataCuratorModel
+    ) -> DataCuratorModel | list[DataCuratorModel]:
         """Handle the request and return the output model.
 
         May return a single model or a list (for chunking/embedding stages).
@@ -444,7 +457,9 @@ def stage(
                         inp = input_model.from_dict(inp)
                     else:
                         # Best-effort: dump and reconstruct
-                        inp = input_model.from_dict(inp.to_dict() if hasattr(inp, "to_dict") else inp.__dict__)
+                        inp = input_model.from_dict(
+                            inp.to_dict() if hasattr(inp, "to_dict") else inp.__dict__
+                        )
 
                 # Call the actual handler
                 result = original_handle(self, ctx, inp)
@@ -453,7 +468,8 @@ def stage(
                 if isinstance(result, list):
                     if output_model is not None:
                         result = [
-                            r if isinstance(r, output_model)
+                            r
+                            if isinstance(r, output_model)
                             else output_model.from_dict(r.to_dict() if hasattr(r, "to_dict") else r)
                             for r in result
                         ]
@@ -472,7 +488,7 @@ def stage(
                 return result
             except Exception as exc:
                 duration_ms = int((time.perf_counter() - start) * 1000)
-                self.log.error(
+                self.log.exception(
                     "stage.error",
                     job_id=ctx.job_id,
                     error_type=type(exc).__name__,
@@ -493,22 +509,22 @@ def stage(
 __all__ = [
     "BaseLambda",
     "Chunk",
-    "ClassifiedChunk",
+    "ChunkingError",
     "Classification",
+    "ClassificationError",
+    "ClassifiedChunk",
     "DataCuratorError",
     "DataCuratorModel",
     "DetectResult",
     "EmbeddedChunk",
+    "EmbeddingError",
     "FormatDetectionError",
     "JobContext",
-    "ParsedDocument",
     "ParseError",
-    "ChunkingError",
-    "RedactionError",
-    "EmbeddingError",
-    "ClassificationError",
-    "RoutingError",
+    "ParsedDocument",
     "RedactedChunk",
-    "stage",
+    "RedactionError",
+    "RoutingError",
     "StructuredElement",
+    "stage",
 ]
