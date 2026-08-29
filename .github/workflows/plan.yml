@@ -28,7 +28,7 @@ jobs:
     if: github.actor != 'dependabot[bot]'
     environment: dev  # uses environment-scoped secrets
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
