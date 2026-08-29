@@ -5,6 +5,11 @@
 
 package datacurator.pii
 
+# Enables the v1 keywords (if, in, contains) on OPA 0.59+, and is the
+# default in OPA 1.x. Without it these files parse under v0 rules and
+# every `test_x if { ... }` fails with "var cannot be used for rule name".
+import rego.v1
+
 # --- count_pii ---
 
 test_count_email if {

@@ -9,9 +9,11 @@
 
 package datacurator.pii
 
-import future.keywords.if
-import future.keywords.in
-import future.keywords.contains
+# Enables the v1 keywords (if, in, contains) on OPA 0.59+, and is the
+# default in OPA 1.x. Without it these files parse under v0 rules and
+# every `test_x if { ... }` fails with "var cannot be used for rule name".
+import rego.v1
+
 
 # --- Pattern definitions ---
 # Each pattern matches a specific type of PII.

@@ -43,11 +43,11 @@ module "oidc" {
 module "iam" {
   source = "./modules/iam"
 
-  project_name      = var.project_name
-  environment       = var.environment
-  name_prefix       = local.name_prefix
-  github_org        = var.github_org
-  github_repo       = var.github_repo
+  project_name = var.project_name
+  environment  = var.environment
+  name_prefix  = local.name_prefix
+  github_org   = var.github_org
+  github_repo  = var.github_repo
   github_subs = [
 
     local.github_sub_main,
