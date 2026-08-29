@@ -73,7 +73,7 @@ Future-proofing: the `Embedder` interface in `src/embedder.py` accepts any provi
 ## Pros and cons of the options
 
 | Model | Cost/1M tok | Dims | Multilingual | Quality | In-region |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | **Titan v2** | **$0.02** | 1024/512/256 | ✅ | Good | ✅ |
 | Cohere v3 | $0.10 | 1024 | ✅ (v3-mul) | Excellent | ✅ |
 | Titan Image v1 | $0.08 | 1024 | n/a | (images) | ✅ |

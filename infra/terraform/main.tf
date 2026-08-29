@@ -46,8 +46,6 @@ module "iam" {
   project_name = var.project_name
   environment  = var.environment
   name_prefix  = local.name_prefix
-  github_org   = var.github_org
-  github_repo  = var.github_repo
   github_subs = [
 
     local.github_sub_main,
@@ -64,11 +62,9 @@ module "iam" {
 
   ]
   github_aud        = local.github_aud
-  github_thumbprint = local.github_thumbprint
   buckets           = local.buckets
   tables            = local.tables
   lambdas           = local.lambdas
-  vector_index_name = local.vector_index_name
   oidc_provider_arn = module.oidc.provider_arn
   common_tags       = local.common_tags
 }
@@ -85,11 +81,10 @@ module "raw_bucket" {
 module "vectors_bucket" {
   source = "./modules/vectors-bucket"
 
-  bucket_name      = local.buckets.vectors
-  index_name       = local.vector_index_name
-  embedding_dim    = var.embedding_dimensions
-  common_tags      = local.common_tags
-  vectors_role_arn = module.iam.vectors_role_arn
+  bucket_name   = local.buckets.vectors
+  index_name    = local.vector_index_name
+  embedding_dim = var.embedding_dimensions
+  common_tags   = local.common_tags
 }
 
 module "ui_bucket" {
@@ -113,7 +108,6 @@ module "lambdas" {
 
   project_name       = var.project_name
   environment        = var.environment
-  name_prefix        = local.name_prefix
   lambdas            = local.lambdas
   lambda_runtime     = var.lambda_runtime
   lambda_memory_mb   = var.lambda_memory_mb
@@ -123,7 +117,6 @@ module "lambdas" {
   vector_index_name  = local.vector_index_name
   bedrock_model_id   = var.bedrock_model_id
   lambda_role_arns   = module.iam.lambda_role_arns
-  api_role_arns      = module.iam.api_role_arns
   log_retention_days = var.log_retention_days
   common_tags        = local.common_tags
 }
@@ -162,7 +155,6 @@ module "cloudfront" {
 
   name_prefix = local.name_prefix
   ui_bucket   = local.buckets.ui
-  api_url     = module.apigateway.api_url
   enabled     = var.enable_cloudfront
   common_tags = local.common_tags
 }

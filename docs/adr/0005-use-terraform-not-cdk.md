@@ -10,6 +10,7 @@
 We need to choose an Infrastructure-as-Code (IaC) tool. Both Terraform and AWS CDK are first-class options. The user already has CDK bootstrapped in this account (CDK asset bucket exists), suggesting prior CDK usage.
 
 The decision affects:
+
 - Who can read/modify infrastructure
 - How reusable the codebase is for the other 14 portfolio projects
 - Long-term maintainability
@@ -89,7 +90,7 @@ The existing CDK asset bucket (`cdk-hnb659fds-assets-761554981898-ap-south-1`) i
 ## Pros and cons of the options
 
 | Option | Cloud-portable | Tooling | Onboarding | Mature |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | CDK (TS) | ❌ AWS only | Medium | Slow (TS) | ✅ |
 | CDK (Python) | ❌ AWS only | Medium | Medium | ✅ |
 | **Terraform** | **✅ All** | **Rich** | **Fast** | **✅** |

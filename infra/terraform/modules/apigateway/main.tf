@@ -32,6 +32,11 @@ variable "common_tags" {
   default = {}
 }
 
+variable "log_retention_days" {
+  type    = number
+  default = 14
+}
+
 resource "aws_apigatewayv2_api" "this" {
   name          = "${var.name_prefix}-api"
   protocol_type = "HTTP"
@@ -47,11 +52,40 @@ resource "aws_apigatewayv2_api" "this" {
   tags = var.common_tags
 }
 
+# Access logs for the API stage.
+#
+# Without these there is no record of who called the API, what they asked
+# for, or what status came back -- Lambda logs only cover requests that
+# reached a handler, so anything rejected at the API layer (bad route, CORS,
+# throttle) leaves no trace at all. Retention is short because this is
+# operational telemetry, not an audit record.
+resource "aws_cloudwatch_log_group" "access" {
+  name              = "/aws/apigateway/${var.name_prefix}-api"
+  retention_in_days = var.log_retention_days
+  tags              = var.common_tags
+}
+
 resource "aws_apigatewayv2_stage" "this" {
   api_id      = aws_apigatewayv2_api.this.id
   name        = "$default"
   auto_deploy = true
   tags        = var.common_tags
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.access.arn
+
+    format = jsonencode({
+      requestId      = "$context.requestId"
+      ip             = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      routeKey       = "$context.routeKey"
+      status         = "$context.status"
+      protocol       = "$context.protocol"
+      responseLength = "$context.responseLength"
+      integrationErr = "$context.integrationErrorMessage"
+    })
+  }
 }
 
 resource "aws_apigatewayv2_integration" "search" {

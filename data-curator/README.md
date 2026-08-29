@@ -25,7 +25,7 @@ python data-curator/generate.py \
 ## What it generates
 
 | File | Format | Rows | Notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `products.csv` | CSV | 100 | Retail products (SKU, price, stock) |
 | `orders.jsonl` | JSONL | 50 | Order records (one per line) |
 | `returns-policy.md` | Markdown | — | Synthetic returns/refunds policy |

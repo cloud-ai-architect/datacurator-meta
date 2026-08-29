@@ -92,7 +92,7 @@ If S3 Vectors proves insufficient (e.g., we need hybrid search or pre-filtering)
 ## Pros and cons of the options
 
 | Option | Idle cost/mo | Query cost | Latency | Maturity | Data residency |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | OpenSearch Serverless | $432 | Included | Low | High | AWS |
 | Aurora pgvector | $43+ | Included | Low | High | AWS |
 | Pinecone | $0 (free tier) / $70+ | Included | Very low | High | External |

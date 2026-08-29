@@ -87,7 +87,7 @@ erDiagram
 Represents one full pipeline execution.
 
 | Field | Type | Required | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `job_id` | UUID | Yes | Primary key |
 | `source_bucket` | string | Yes | e.g., `datacurator-raw-dev` |
 | `source_key` | string | Yes | e.g., `ingests/retailpulse/2026/08/27/q3.pdf` |
@@ -112,7 +112,7 @@ Represents one full pipeline execution.
 The fundamental unit of stored data. One source document produces N chunks.
 
 | Field | Type | Required | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `chunk_id` | UUID | Yes | Primary key |
 | `job_id` | UUID | Yes | Foreign key to Job |
 | `document_id` | UUID | Yes | Logical document identifier (allows re-ingestion) |
@@ -150,7 +150,7 @@ The fundamental unit of stored data. One source document produces N chunks.
 Lives in S3 Vectors. Stored separately from the DynamoDB chunk-metadata for performance.
 
 | Field | Type | Description |
-|---|---|---|
+| --- | --- | --- |
 | `chunk_id` | UUID | Primary key (also in DynamoDB) |
 | `vector` | float32[1024] | The embedding |
 | `metadata` | object | Filter metadata: `{source, format, category}` |
@@ -170,7 +170,7 @@ Embedded in the Chunk record in DynamoDB. Not a separate table.
 User feedback on a chunk. Drives the self-learning loop in Phase 3.
 
 | Field | Type | Required | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `feedback_id` | UUID | Yes | Primary key |
 | `chunk_id` | UUID | Yes | Foreign key to Chunk |
 | `user_id` | string | Yes | Who submitted the feedback (from IAM sub-claim) |
@@ -191,7 +191,7 @@ User feedback on a chunk. Drives the self-learning loop in Phase 3.
 ## Cardinality
 
 | Relationship | Cardinality | Example |
-|---|---|---|
+| --- | --- | --- |
 | Source → Job | 1:1 | One upload → one job |
 | Job → Chunk | 1:N | One job → ~10 to ~1000 chunks |
 | Chunk → Embedding | 1:1 | Each chunk has one embedding |

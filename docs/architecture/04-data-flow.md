@@ -130,7 +130,7 @@ sequenceDiagram
 ## Data transformations (what happens to each field)
 
 | Field | Source | Stage 1 (Detect) | Stage 2 (Parse) | Stage 3 (Chunk) | Stage 4 (Redact) | Stage 5 (Embed) | Stage 6 (Classify) | Stage 7 (Route) |
-|---|---|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `source_bucket` | S3 event | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `source_key` | S3 event | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `detected_format` | | ✓ (set) | ✓ | | | | | ✓ |
@@ -143,7 +143,7 @@ sequenceDiagram
 ## Data retention
 
 | Store | Retention | Cleanup |
-|---|---|---|
+| --- | --- | --- |
 | S3 raw | 30 days | S3 Lifecycle policy |
 | S3 Vectors | Indefinite | Manual |
 | DynamoDB chunk-metadata | 90 days | DynamoDB TTL |
@@ -155,7 +155,7 @@ sequenceDiagram
 
 ### S3 raw bucket
 
-```
+```text
 s3://datacurator-raw-dev/
 └── ingests/
     └── {data_source_name}/
@@ -167,7 +167,7 @@ s3://datacurator-raw-dev/
 
 Example:
 
-```
+```text
 s3://datacurator-raw-dev/
 └── ingests/
     └── retailpulse/
@@ -179,7 +179,7 @@ s3://datacurator-raw-dev/
 
 ### S3 Vectors index
 
-```
+```text
 index: datacurator-chunks-v1
 dimensions: 1024
 distance: cosine
@@ -192,7 +192,7 @@ vector[chunk_id] = {
 
 ### DynamoDB tables
 
-```
+```text
 datacurator-chunk-metadata-dev
   PK: chunk_id (String)
   GSI: source-index  (PK: source_key, SK: created_at)
@@ -214,7 +214,7 @@ datacurator-jobs-dev
 ## What lives where (storage decision matrix)
 
 | Data type | Store | Why |
-|---|---|---|
+| --- | --- | --- |
 | Raw bytes (original file) | S3 | Cheap, durable, lifecycle-managed |
 | Parsed text | (transient) | Not persisted; only chunks stored |
 | Chunks (post-redact) | DynamoDB metadata + S3 Vectors | Metadata in DDB for filter, vector in S3V for search |

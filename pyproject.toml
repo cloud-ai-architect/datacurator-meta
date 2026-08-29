@@ -66,8 +66,6 @@ dev = [
   "moto[dynamodb,s3]>=5.0.0",
   "freezegun>=1.5.0",
   "responses>=0.25.0",
-  # Rego
-  "opa>=1.0.0",
 ]
 docs = [
   "mkdocs>=1.6.0",

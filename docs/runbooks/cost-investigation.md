@@ -29,6 +29,7 @@ aws ce get-cost-and-usage \
 **Symptom**: S3 bill increases steadily.
 
 **Diagnostic**:
+
 ```bash
 # List bucket sizes
 for bucket in datacurator-raw-dev datacurator-vectors-dev datacurator-ui-dev; do
@@ -40,7 +41,7 @@ done
 **Common causes**:
 
 | Cause | Fix |
-|---|---|
+| --- | --- |
 | Raw bucket not lifecycle-expiring | Verify `lifecycle_rule` in Terraform |
 | Vector index growing unbounded | Add filter to chunker to drop low-value chunks |
 | Old test data never deleted | Manually purge via `aws s3 rm --recursive` |
@@ -50,6 +51,7 @@ done
 **Symptom**: Lambda bill spikes; thousands of invocations.
 
 **Diagnostic**:
+
 ```bash
 # Get Lambda invocation metrics for last 24h
 aws cloudwatch get-metric-statistics \
@@ -72,6 +74,7 @@ aws cloudwatch get-metric-statistics \
 | Test script left running | Kill the script |
 
 **Fix**:
+
 ```bash
 # Throttle the Lambda concurrency
 aws lambda put-function-concurrency \
@@ -85,6 +88,7 @@ aws lambda put-function-concurrency \
 **Symptom**: Bedrock line item dominates the bill.
 
 **Diagnostic**:
+
 ```bash
 # Check Bedrock usage in Cost Explorer
 # Group by UsageType
@@ -99,7 +103,7 @@ aws ce get-cost-and-usage \
 **Common causes**:
 
 | Cause | Fix |
-|---|---|
+| --- | --- |
 | Large batch re-embedding | Wait for batch to finish; or cancel and reduce |
 | Classification model too expensive (Claude Sonnet) | Switch to Haiku for non-critical |
 | Token count much higher than expected | Check chunker config |
@@ -109,6 +113,7 @@ aws ce get-cost-and-usage \
 **Symptom**: DynamoDB line item high.
 
 **Diagnostic**:
+
 ```bash
 # Check consumed WCU/RCU
 aws cloudwatch get-metric-statistics \
@@ -124,7 +129,7 @@ aws cloudwatch get-metric-statistics \
 **Common causes**:
 
 | Cause | Fix |
-|---|---|
+| --- | --- |
 | Hot partition key (sequential UUIDs are fine; timestamp-based is bad) | Switch PK to UUID |
 | Scan instead of query | Add GSI; use Query |
 | No TTL on items | Enable TTL |
@@ -134,6 +139,7 @@ aws cloudwatch get-metric-statistics \
 **Symptom**: CloudWatch Logs line item higher than expected.
 
 **Diagnostic**:
+
 ```bash
 # Find log groups by size
 aws logs describe-log-groups \
@@ -144,7 +150,7 @@ aws logs describe-log-groups \
 **Common causes**:
 
 | Cause | Fix |
-|---|---|
+| --- | --- |
 | Lambda logging full payload | Add `print` filter to remove sensitive fields |
 | Log retention too long | Reduce to 30 days |
 | Verbose logging in production | Set `LOG_LEVEL=WARN` in prod |

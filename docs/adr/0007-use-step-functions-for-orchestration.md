@@ -87,6 +87,7 @@ stateDiagram-v2
 ```
 
 Each stage:
+
 - **Retries**: 3 with exponential backoff (1s, 5s, 25s)
 - **Catches**: sends to a `datacurator-jobs-failed` SNS topic
 - **Timeout**: 5 minutes per stage (15 minutes for the whole run)
@@ -115,7 +116,7 @@ Each stage:
 ## Pros and cons of the options
 
 | Option | Visibility | Error handling | Cost/run | Complexity |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Chained Lambdas | ❌ None | Custom | Low | Low |
 | **Step Functions** | **✅ Visual + history** | **✅ Built-in** | **$0.0003** | **Medium** |
 | EventBridge + SQS | ⚠️ Custom | Custom | Low | High |

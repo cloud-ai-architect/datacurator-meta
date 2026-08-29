@@ -38,7 +38,7 @@ What actually happened. Include the full error message and stack trace if applic
 
 ## Logs
 
-```
+```text
 Paste relevant logs here. Mask any account IDs or secrets.
 ```
 

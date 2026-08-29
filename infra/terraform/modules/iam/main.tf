@@ -19,6 +19,10 @@ terraform {
   }
 }
 
+# The OIDC provider is account-local; resolving the account id here lets the
+# policy below name it instead of wildcarding the account position.
+data "aws_caller_identity" "current" {}
+
 variable "project_name" {
   type = string
 }
@@ -35,19 +39,7 @@ variable "github_subs" {
   type = list(string)
 }
 
-variable "github_org" {
-  type = string
-}
-
-variable "github_repo" {
-  type = string
-}
-
 variable "github_aud" {
-  type = string
-}
-
-variable "github_thumbprint" {
   type = string
 }
 
@@ -61,10 +53,6 @@ variable "tables" {
 
 variable "lambdas" {
   type = map(string)
-}
-
-variable "vector_index_name" {
-  type = string
 }
 
 variable "oidc_provider_arn" {
@@ -195,7 +183,7 @@ data "aws_iam_policy_document" "github_actions_inline" {
     ]
 
     resources = [
-      "arn:aws:iam::*:oidc-provider/token.actions.githubusercontent.com",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com",
     ]
   }
 
@@ -206,6 +194,11 @@ data "aws_iam_policy_document" "github_actions_inline" {
   # nor tag, and API Gateway, CloudFront and KMS address resources by
   # generated ID. Enumerating services keeps this materially narrower than
   # Action "*" while remaining workable for a deploy role.
+  # See the note above: Terraform must create resources that do not exist
+  # yet, so they can be addressed by neither ARN nor tag. Service enumeration
+  # is the narrowest workable scope for a deploy role, and this role is
+  # assumable only via GitHub OIDC from this one repository.
+  # tfsec:ignore:aws-iam-no-policy-wildcards
   statement {
     sid    = "DeployProjectServices"
     effect = "Allow"
@@ -303,6 +296,11 @@ resource "aws_iam_role_policy" "lambda_s3_read" {
 }
 
 data "aws_iam_policy_document" "lambda_bedrock" {
+  # foundation-model/* is the granularity at which Bedrock grants model
+  # access. Pinning individual model ARNs breaks the moment a model is
+  # retired or a cross-region inference profile is used, and the grant
+  # conveys nothing beyond invoking a managed model.
+  # tfsec:ignore:aws-iam-no-policy-wildcards
   statement {
     sid    = "BedrockInvoke"
     effect = "Allow"
@@ -413,6 +411,11 @@ resource "aws_iam_role" "vectors" {
 }
 
 data "aws_iam_policy_document" "vectors_inline" {
+  # The wildcard resource is narrowed by the aws:ResourceTag/Project
+  # condition below, which tfsec does not evaluate. s3vectors indexes are
+  # addressed by generated ARN, so a tag condition is the only scoping
+  # available at plan time.
+  # tfsec:ignore:aws-iam-no-policy-wildcards
   statement {
     sid    = "VectorsAccess"
     effect = "Allow"

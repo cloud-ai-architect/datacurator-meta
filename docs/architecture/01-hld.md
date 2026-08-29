@@ -168,7 +168,7 @@ graph TB
 ## Failure modes and degradation
 
 | Failure | Impact | Mitigation |
-|---|---|---|
+| --- | --- | --- |
 | S3 unavailable | Uploads fail | S3 99.99% SLA; client retry |
 | Bedrock unavailable | Embedding fails | Step Function retries 3× with backoff; failed chunks retryable |
 | S3 Vectors unavailable | Search fails | Read-only DynamoDB metadata still works; cached results |

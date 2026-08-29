@@ -13,7 +13,7 @@
 
 Report privately via one of these channels:
 
-1. **GitHub Security Advisories** (preferred): https://github.com/vijaymadhu/datacurator-meta/security/advisories/new
+1. **GitHub Security Advisories** (preferred): <https://github.com/vijaymadhu/datacurator-meta/security/advisories/new>
 2. **Email**: security@<your-domain> (replace with your actual security contact)
 
 Please include:
@@ -26,7 +26,7 @@ Please include:
 ## Response timeline
 
 | Stage | Target time |
-|---|---|
+| --- | --- |
 | Acknowledge report | 48 hours |
 | Triage and severity assessment | 7 days |
 | Patch release (Critical/High) | 14 days |

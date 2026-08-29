@@ -7,7 +7,7 @@ This document describes the **threat model**, **trust boundaries**, **IAM strate
 ## Threat model (STRIDE)
 
 | Threat | Vector | Mitigation |
-|---|---|---|
+| --- | --- | --- |
 | **Spoofing** | Stolen GitHub PAT, leaked AWS keys | OIDC only; no long-lived secrets; sub-claim scoped to repo + branch |
 | **Tampering** | Malicious PR, malicious Lambda code | PR review required; OIDC allows plan-only on PRs; tflint/tfsec in CI; gitleaks pre-commit |
 | **Repudiation** | "I didn't deploy that" | CloudTrail logs all `AssumeRoleWithWebIdentity` with sub-claim; every action attributable to a commit |
@@ -222,7 +222,7 @@ graph LR
 ## Encryption
 
 | Data | At rest | In transit |
-|---|---|---|
+| --- | --- | --- |
 | S3 raw | AES-256 | TLS 1.2+ |
 | S3 vectors | AES-256 | TLS 1.2+ |
 | S3 UI | AES-256 | TLS 1.2+ |

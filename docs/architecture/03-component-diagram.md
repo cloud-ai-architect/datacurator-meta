@@ -212,7 +212,7 @@ sequenceDiagram
 Each YAML config is **typed** and **validated** at Lambda startup. A missing field or wrong type fails the Lambda fast.
 
 | Config | Validated by | Used by |
-|---|---|---|
+| --- | --- | --- |
 | `config/datasources/*.yaml` | Pydantic | Parser, Router |
 | `config/parsers/*.yaml` | Pydantic | Parsers |
 | `config/chunkers/*.yaml` | Pydantic | Chunker |
@@ -240,7 +240,7 @@ The OPA bundle is **embedded** in the Lambda deployment package (not loaded from
 
 ## Where each component lives
 
-```
+```text
 datacurator-meta/
 ├── src/                          # Python application code
 │   ├── common.py                 # BaseLambda, JobContext, stage decorator

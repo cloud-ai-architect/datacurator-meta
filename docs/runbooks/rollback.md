@@ -142,7 +142,7 @@ After rolling back:
 ## Recovery time objectives
 
 | Rollback type | Target RTO | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Code | 5 min | Just a git revert |
 | Infrastructure | 15 min | Requires S3 state restore |
 | Data | 60 min | Requires manual re-processing |

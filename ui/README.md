@@ -12,7 +12,7 @@ Static, serverless, single-page web app for searching the DataCurator knowledge 
 
 ## Architecture
 
-```
+```text
 ui/
 ├── index.html      # Markup
 ├── style.css       # Styles (dark theme, GitHub-inspired)

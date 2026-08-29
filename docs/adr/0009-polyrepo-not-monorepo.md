@@ -45,7 +45,7 @@ The portfolio consists of 15 projects (14 industry-specific agents + 1 meta "Dat
 
 Naming convention:
 
-```
+```text
 cloud-ai-architect/
 ├── datacurator-meta              # This repo (Project 15)
 ├── retailpulse-cx-agent          # Project 13
@@ -91,7 +91,7 @@ Shared code (e.g., a `data_curator_client` library for downstream projects to qu
 ## Pros and cons of the options
 
 | Option | CI cost | Discoverability | Permissions | Cross-cutting changes |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Monorepo | High (waste) | Mixed | Coarse | Easy |
 | **Polyrepo** | **Low (per project)** | **Focused** | **Fine** | **Coordinated** |
 

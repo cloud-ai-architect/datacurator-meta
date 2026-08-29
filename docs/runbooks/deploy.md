@@ -42,7 +42,7 @@ The script prints the role ARN and bucket names. **Copy these.**
 Go to your GitHub repo → Settings → Secrets and variables → Actions → New repository secret:
 
 | Name | Value | Source |
-|---|---|---|
+| --- | --- | --- |
 | `AWS_DEPLOY_ROLE_ARN` | `arn:aws:iam::ACCOUNT:role/datacurator-github-deploy-role-dev` | From bootstrap output |
 | `AWS_REGION` | `ap-south-1` | From bootstrap input |
 
@@ -198,7 +198,7 @@ terraform apply -var-file=envs/staging.tfvars
 ### Bedrock "AccessDeniedException"
 
 - You need to enable model access in the Bedrock console first
-- Go to https://ap-south-1.console.aws.amazon.com/bedrock/home → Model access → Enable "Titan Text Embeddings v2"
+- Go to <https://ap-south-1.console.aws.amazon.com/bedrock/home> → Model access → Enable "Titan Text Embeddings v2"
 
 ### Step Function execution fails immediately
 

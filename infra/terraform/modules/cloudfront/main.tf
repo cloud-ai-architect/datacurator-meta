@@ -22,10 +22,6 @@ variable "ui_bucket" {
   type = string
 }
 
-variable "api_url" {
-  type = string
-}
-
 variable "enabled" {
   type    = bool
   default = true
@@ -44,6 +40,25 @@ resource "aws_cloudfront_origin_access_control" "this" {
   signing_protocol                  = "sigv4"
 }
 
+# Three checks are deliberately accepted here:
+#
+#   WAF carries a fixed monthly charge per web ACL plus per-request cost.
+#   This distribution serves a static, read-only UI with no authenticated
+#   surface and no write path; the API it calls is a separate origin with
+#   its own controls.
+#
+#   With the default *.cloudfront.net certificate AWS pins the minimum TLS
+#   protocol version to TLSv1 and rejects any higher value. Raising it
+#   requires a custom domain and an ACM certificate, which this distribution
+#   does not have.
+#
+#   Standard access logging writes to a dedicated S3 bucket that would itself
+#   need lifecycle and access controls. Request-level telemetry for this
+#   stack is captured at the API stage instead, where the requests that
+#   matter actually land.
+# tfsec:ignore:aws-cloudfront-enable-waf
+# tfsec:ignore:aws-cloudfront-use-secure-tls-policy
+# tfsec:ignore:aws-cloudfront-enable-logging
 resource "aws_cloudfront_distribution" "this" {
   enabled             = var.enabled
   comment             = "DataCurator KB UI"

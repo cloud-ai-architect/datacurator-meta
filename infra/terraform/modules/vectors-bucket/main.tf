@@ -38,10 +38,6 @@ variable "common_tags" {
   default = {}
 }
 
-variable "vectors_role_arn" {
-  type = string
-}
-
 # --- KMS key + S3 bucket (for the underlying storage) ---
 
 resource "aws_kms_key" "this" {

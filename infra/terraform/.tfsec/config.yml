@@ -1,0 +1,37 @@
+# tfsec configuration.
+#
+# Everything not listed here is enforced, and the job fails on any finding.
+# The exclusions below are architectural decisions rather than gaps, and each
+# one is recorded with the reason it was taken. Site-specific acceptances are
+# annotated inline at the resource instead, so that the reasoning sits next
+# to the thing it describes; this file is only for decisions that apply
+# uniformly across every resource of a kind.
+
+exclude:
+  # Key ownership, not encryption.
+  #
+  # Every resource below is already encrypted at rest -- S3 with SSE-S3,
+  # DynamoDB and CloudWatch Logs with AWS-managed keys. These checks ask for
+  # a customer-managed CMK instead, which buys key rotation control, an
+  # auditable key policy, and the ability to revoke access by deleting the
+  # key.
+  #
+  # That is the right trade for regulated data. This stack curates public
+  # sample documents: there is no data here whose exposure a key policy would
+  # contain, and a CMK carries a fixed monthly charge per key plus per-request
+  # cost across sixteen resources. The KMS footprint of this account was
+  # deliberately reduced for that reason.
+  #
+  # If this stack ever handles customer or regulated data, these three
+  # exclusions are the first thing to remove.
+  - aws-s3-encryption-customer-key
+  - aws-dynamodb-table-customer-key
+  - aws-cloudwatch-log-group-customer-key
+
+  # S3 server access logging writes to a second bucket, which needs its own
+  # lifecycle policy, access controls and encryption -- and which tfsec then
+  # flags for not having access logging of its own. The access questions that
+  # matter for this stack are answered elsewhere: CloudTrail records the
+  # control-plane calls, and the API stage logs every request that reaches
+  # the data path.
+  - aws-s3-enable-bucket-logging

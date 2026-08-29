@@ -96,7 +96,7 @@ graph TB
 ## Resources by AWS service
 
 | Service | Resources | Naming |
-|---|---|---|
+| --- | --- | --- |
 | S3 | 3 buckets | `datacurator-{raw,vectors,ui}-dev` |
 | S3 Vectors | 1 index | `datacurator-chunks-v1` (in `datacurator-vectors-dev`) |
 | DynamoDB | 3 tables | `datacurator-{chunk-metadata,feedback,jobs}-dev` |
@@ -150,7 +150,7 @@ tags = {
 
 Resource Group `rg-datacurator-dev` is filter-based:
 
-```
+```text
 ResourceTypeFilters: [all]
 TagFilters:
   - Key: Project, Values: [datacurator]
@@ -222,7 +222,7 @@ sequenceDiagram
 ## Disaster recovery
 
 | Disaster | Recovery |
-|---|---|
+| --- | --- |
 | Region down | Re-deploy to a new region (multi-region is Phase 5) |
 | Accidental bucket delete | Versioning + soft delete; restore from previous version |
 | Terraform state corruption | Restore from S3 versioning (S3 has 99.999999999% durability) |

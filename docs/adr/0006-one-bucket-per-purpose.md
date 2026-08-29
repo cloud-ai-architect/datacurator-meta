@@ -49,7 +49,7 @@ Two schools of thought:
 
 Naming convention:
 
-```
+```json
 {project}-{purpose}-{environment}
   - datacurator-raw-dev
   - datacurator-vectors-dev
@@ -90,7 +90,7 @@ The `ui` bucket is the only one with public ACLs allowed, and only for the `stat
 ## Pros and cons of the options
 
 | Option | IAM clarity | Lifecycle | Public access | Cost visibility | Bucket count |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | 1. Per env | ⚠️ Complex | ⚠️ Mixed | ❌ Conflicts | ⚠️ Mixed | Low |
 | **2. Per purpose** | **✅ Clear** | **✅ Tailored** | **✅ Unambiguous** | **✅ Per purpose** | **Medium** |
 

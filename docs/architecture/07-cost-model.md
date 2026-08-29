@@ -7,7 +7,7 @@ This document is the **single source of truth** for DataCurator's cost — what 
 ## TL;DR
 
 | Scenario | Monthly cost |
-|---|---|
+| --- | --- |
 | **Idle** (no traffic) | **~$0.50 / month** |
 | **Light usage** (1K pipeline runs, 10K searches) | **~$5 / month** |
 | **Moderate usage** (10K pipeline runs, 100K searches) | **~$25 / month** |
@@ -18,7 +18,7 @@ This document is the **single source of truth** for DataCurator's cost — what 
 ### Compute (Lambda + Step Functions)
 
 | Component | Pricing | Per-pipeline-run cost |
-|---|---|---|
+| --- | --- | --- |
 | Lambda invocations | $0.20 / 1M requests | ~$0.000002 (8 invocations) |
 | Lambda GB-seconds | $0.0000166667 / GB-s | ~$0.0008 (avg 512MB, 3s) |
 | Step Function transitions | $0.025 / 1K transitions | ~$0.0002 (8 transitions) |
@@ -27,7 +27,7 @@ This document is the **single source of truth** for DataCurator's cost — what 
 ### AI / ML (Bedrock)
 
 | Component | Pricing | Per-chunk cost |
-|---|---|---|
+| --- | --- | --- |
 | Titan Embed v2 | $0.02 / 1M input tokens | ~$0.00001 (avg 500 tokens) |
 | **Embedding per 1K chunks** | | **~$0.01** |
 | Classifier (Claude Haiku 4.5) | $0.25 / 1M input tokens, $1.25 / 1M output | ~$0.0005 per chunk |
@@ -36,7 +36,7 @@ This document is the **single source of truth** for DataCurator's cost — what 
 ### Storage
 
 | Component | Pricing | Per-month cost |
-|---|---|---|
+| --- | --- | --- |
 | S3 standard (raw, 1 GB) | $0.023 / GB | $0.023 |
 | S3 Vectors (1 GB vectors) | $0.04 / GB | $0.04 |
 | DynamoDB (1 GB, on-demand) | $1.25 / million WCU/RCU | ~$0.10 (1K ops/day) |
@@ -45,7 +45,7 @@ This document is the **single source of truth** for DataCurator's cost — what 
 ### API and CDN
 
 | Component | Pricing | Per-request cost |
-|---|---|---|
+| --- | --- | --- |
 | API Gateway HTTP | $1.00 / million requests | $0.000001 |
 | Lambda (search) | $0.20 / 1M | $0.0000002 |
 | Bedrock Titan (query) | $0.02 / 1M tokens | $0.0000002 |
@@ -57,7 +57,7 @@ This document is the **single source of truth** for DataCurator's cost — what 
 ### Other
 
 | Component | Pricing | Per-month cost |
-|---|---|---|
+| --- | --- | --- |
 | CloudWatch logs (1 GB) | $0.50 / GB | $0.50 |
 | CloudWatch metrics (10 custom) | $0.30 / metric | $3.00 |
 | SNS (1K notifications) | $0.50 / million | $0.0005 |
@@ -69,7 +69,7 @@ This document is the **single source of truth** for DataCurator's cost — what 
 A typical run processes a 1 MB PDF → ~50 chunks → ~25K tokens.
 
 | Stage | Cost |
-|---|---|
+| --- | --- |
 | Lambda (8 invocations, avg 3s, 512MB) | $0.0008 |
 | Step Functions (8 transitions) | $0.0002 |
 | Bedrock embedding (25K tokens) | $0.0005 |
@@ -85,7 +85,7 @@ For a CSV → ~10 chunks → ~5K tokens, total is ~$0.005.
 A search returns top-10 results.
 
 | Stage | Cost |
-|---|---|
+| --- | --- |
 | API Gateway | $0.000001 |
 | Lambda (search) | $0.0000002 |
 | Bedrock embedding (query, ~50 tokens) | $0.000001 |
@@ -96,7 +96,7 @@ A search returns top-10 results.
 ## Cost scaling
 
 | Workload | Pipeline runs/mo | Search req/mo | Compute | Bedrock | Storage | API | **Total** |
-|---|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- | --- |
 | Idle | 0 | 0 | $0.00 | $0.00 | $0.50 | $0.00 | **$0.50** |
 | Light | 1,000 | 10,000 | $1.00 | $0.50 | $1.00 | $0.10 | **$2.60** |
 | Moderate | 10,000 | 100,000 | $10.00 | $5.00 | $5.00 | $1.00 | **$21.00** |
@@ -106,7 +106,7 @@ A search returns top-10 results.
 ## Cost comparison: S3 Vectors vs alternatives
 
 | Solution | Idle / month | 10K vectors, 100K queries / month |
-|---|---|---|
+| --- | --- | --- |
 | **S3 Vectors** | **$0.04** | **$0.40** |
 | OpenSearch Serverless (2 OCU min) | $432.00 | $432.00 |
 | Aurora pgvector (Serverless v2, 0.5 ACU min) | $43.00 | $50.00 |
@@ -117,7 +117,7 @@ A search returns top-10 results.
 ## Cost comparison: Titan v2 vs Cohere v3
 
 | Model | 1M tokens cost | 1M chunks (avg 500 tok) cost |
-|---|---|---|
+| --- | --- | --- |
 | **Titan v2** | **$0.02** | **$10** |
 | Cohere v3 (English) | $0.10 | $50 |
 | OpenAI text-embedding-3-small | $0.02 | $10 (but external API, adds egress) |

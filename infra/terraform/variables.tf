@@ -91,8 +91,3 @@ variable "log_retention_days" {
   default     = 30
 }
 
-variable "monthly_budget_usd" {
-  description = "Monthly budget for cost alarms (USD)"
-  type        = number
-  default     = 20
-}

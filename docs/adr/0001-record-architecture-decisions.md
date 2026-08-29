@@ -64,7 +64,7 @@ The template lives at [`docs/adr/template.md`](template.md).
 ## Pros and cons of the options
 
 | Option | Discoverability | Reviewability | Cost | Discipline needed |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 1. No log | ❌ Lost | ❌ None | None | High (always forgetting) |
 | 2. Wiki | ⚠️ Drift | ⚠️ Decoupled | Low | Medium |
 | 3. MADR in git | ✅ Searchable | ✅ PR review | Low | Medium |

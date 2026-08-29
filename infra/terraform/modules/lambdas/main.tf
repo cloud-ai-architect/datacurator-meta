@@ -30,10 +30,6 @@ variable "environment" {
   type = string
 }
 
-variable "name_prefix" {
-  type = string
-}
-
 variable "lambdas" {
   type = map(string)
 }
@@ -70,10 +66,6 @@ variable "bedrock_model_id" {
 }
 
 variable "lambda_role_arns" {
-  type = map(string)
-}
-
-variable "api_role_arns" {
   type = map(string)
 }
 

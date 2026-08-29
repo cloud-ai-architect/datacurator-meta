@@ -118,7 +118,7 @@ The OPA policy runs in the Redactor Lambda **before** embedding, ensuring no PII
 ## Pros and cons of the options
 
 | Option | Testability | Versioning | Reusability | Audit | Bundle size |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | Python regex | ⚠️ Inline tests | ⚠️ In code | ❌ Scattered | ⚠️ | 0 |
 | Presidio | ✅ Library tests | ⚠️ In code | ⚠️ Library | ❌ | 500MB |
 | **OPA Rego** | **✅ First-class** | **✅ Data file** | **✅ Cross-project** | **✅** | **10MB** |

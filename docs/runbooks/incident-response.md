@@ -7,7 +7,7 @@ When something is broken **right now** and the KB UI is down, the pipeline is fa
 ## Severity levels
 
 | Level | Impact | Response time | Examples |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **SEV-1** | Total outage | < 15 min | All pipeline runs failing; KB UI down |
 | **SEV-2** | Degraded | < 1 hour | > 50% pipeline runs failing; search broken |
 | **SEV-3** | Minor | < 4 hours | < 10% of runs failing; specific format not parsing |
@@ -40,6 +40,7 @@ flowchart TD
 **Symptom**: Step Function execution status `FAILED`, error in `Detect` state.
 
 **Diagnostic**:
+
 ```bash
 # Get the failed execution
 aws stepfunctions list-executions \
@@ -60,7 +61,7 @@ aws logs tail /aws/lambda/datacurator-detect-dev --follow
 **Common causes**:
 
 | Error message | Cause | Fix |
-|---|---|---|
+| --- | --- | --- |
 | `AccessDenied` on `s3:GetObject` | IAM role missing S3 read | Re-apply Terraform |
 | `NoSuchKey` | File removed before pipeline ran | Re-upload |
 | `ThrottlingException` | Too many concurrent runs | Raise concurrency limit |
@@ -71,6 +72,7 @@ aws logs tail /aws/lambda/datacurator-detect-dev --follow
 **Symptom**: Job succeeds through Redact but fails at Embed.
 
 **Diagnostic**:
+
 ```bash
 aws logs tail /aws/lambda/datacurator-embed-dev --follow
 ```
@@ -78,7 +80,7 @@ aws logs tail /aws/lambda/datacurator-embed-dev --follow
 **Common causes**:
 
 | Error message | Cause | Fix |
-|---|---|---|
+| --- | --- | --- |
 | `AccessDeniedException` on Bedrock | Model access not enabled in console | Enable in Bedrock console |
 | `ThrottlingException` | Bedrock rate limit | Reduce batch size, add backoff |
 | `ValidationException: input too long` | Chunk > 25K chars | Reduce chunk size in config |
@@ -89,6 +91,7 @@ aws logs tail /aws/lambda/datacurator-embed-dev --follow
 **Symptom**: UI loads, but search returns 500.
 
 **Diagnostic**:
+
 ```bash
 # Check API Gateway logs
 aws logs tail /aws/vendedlogs/apigateway/datacurator-api-dev --follow
@@ -100,7 +103,7 @@ aws logs tail /aws/lambda/datacurator-search-dev --follow
 **Common causes**:
 
 | Error message | Cause | Fix |
-|---|---|---|
+| --- | --- | --- |
 | `AccessDeniedException` on `s3vectors:QueryVectors` | IAM missing S3 Vectors perm | Re-apply Terraform |
 | `IndexNotFoundException` | Vector index deleted | Re-run `terraform apply` |
 | `ServiceUnavailable` on Bedrock | Bedrock down | Wait for AWS to recover |
@@ -111,6 +114,7 @@ aws logs tail /aws/lambda/datacurator-search-dev --follow
 **Symptom**: Browser shows 403, 502, or 504.
 
 **Diagnostic**:
+
 ```bash
 # Check CloudFront
 aws cloudfront get-distribution --id <distribution-id>
@@ -131,7 +135,7 @@ aws cloudwatch get-metric-statistics \
 **Common causes**:
 
 | Error | Cause | Fix |
-|---|---|---|
+| --- | --- | --- |
 | 403 Forbidden | CloudFront OAC misconfigured | Re-apply Terraform; wait 5 min for CF propagation |
 | 502 Bad Gateway | S3 bucket policy denies CF | Re-apply Terraform |
 | 504 Gateway Timeout | Origin (S3) slow | Check S3 health |
@@ -141,6 +145,7 @@ aws cloudwatch get-metric-statistics \
 **Symptom**: Apply workflow fails with AWS error.
 
 **Diagnostic**:
+
 - Check the Actions tab for the failed run
 - Look at the `terraform apply` step output
 - Most common: `sts:AssumeRoleWithWebIdentity` fails
@@ -148,7 +153,7 @@ aws cloudwatch get-metric-statistics \
 **Common causes**:
 
 | Error | Cause | Fix |
-|---|---|---|
+| --- | --- | --- |
 | `Not authorized to perform sts:AssumeRoleWithWebIdentity` | OIDC trust policy mismatch | Re-run bootstrap, check sub-claim |
 | `Error: getting data.aws_caller_identity` | Wrong credentials in workflow | Check secrets |
 | `Error acquiring the state lock` | Stuck lock | Manually delete lock in DynamoDB console |

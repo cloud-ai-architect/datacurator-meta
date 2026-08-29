@@ -11,6 +11,7 @@ This project follows the [Contributor Covenant](CODE_OF_CONDUCT.md). By particip
 ### 1. File an issue first
 
 For non-trivial changes (new feature, refactor, breaking change), file an issue describing:
+
 - The problem you're solving
 - Your proposed approach
 - Alternatives considered
@@ -27,6 +28,7 @@ git checkout -b feat/your-feature-name
 ```
 
 Branch naming convention:
+
 - `feat/short-description` — new feature
 - `fix/short-description` — bug fix
 - `docs/short-description` — documentation only
@@ -57,6 +59,7 @@ pre-commit run --all-files
 ```
 
 Hooks enforce:
+
 - Gitleaks secret scan
 - Ruff lint + format
 - Mypy type check

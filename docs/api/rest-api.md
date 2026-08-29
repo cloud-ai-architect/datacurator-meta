@@ -36,7 +36,7 @@ Semantic search over the knowledge base.
 **Query parameters**:
 
 | Name | Type | Required | Default | Description |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | `q` | string | Yes | — | Search query (1-500 chars) |
 | `top_k` | integer | No | 10 | Number of results (1-100) |
 | `source` | string | No | — | Filter by data source name |
@@ -80,7 +80,7 @@ aws apigatewayv2 invoke \
 **Errors**:
 
 | Status | Code | Description |
-|---|---|---|
+| --- | --- | --- |
 | 400 | `INVALID_QUERY` | `q` is missing or empty |
 | 400 | `INVALID_TOP_K` | `top_k` is not in [1, 100] |
 | 401 | `UNAUTHORIZED` | SigV4 signature missing or invalid |
@@ -127,7 +127,7 @@ curl -X POST \
 **Errors**:
 
 | Status | Code | Description |
-|---|---|---|
+| --- | --- | --- |
 | 400 | `INVALID_BODY` | JSON malformed |
 | 400 | `INVALID_LABEL` | `label` not in {misclassified, misrouted, good} |
 | 404 | `CHUNK_NOT_FOUND` | `chunk_id` doesn't exist |
@@ -157,7 +157,7 @@ Health check (no auth).
 ## Rate limits
 
 | Endpoint | RPS limit | Burst |
-|---|---|---|
+| --- | --- | --- |
 | `GET /search` | 50 | 100 |
 | `POST /feedback` | 10 | 20 |
 | `GET /health` | 100 | 200 |

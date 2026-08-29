@@ -107,7 +107,7 @@ The GitHub Actions workflow (`.github/workflows/apply.yml`) requests a short-liv
 ## Pros and cons of the options
 
 | Option | Secrets in repo | Rotation | Audit | Trust scope | Setup complexity |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | Long-lived keys | ❌ Yes | Manual | Key ID only | All | Low |
 | AWS Vault | ✅ None | Auto | Session only | All | Medium |
 | **GitHub OIDC** | **✅ None** | **Auto** | **Full context** | **Repo + branch** | **Medium** |

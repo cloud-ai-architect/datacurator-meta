@@ -122,7 +122,7 @@ graph TB
 ## Why this design
 
 | Concern | Decision | Why |
-|---|---|---|
+| --- | --- | --- |
 | Serverless | Lambda + Step Functions + S3 + DynamoDB | Zero idle cost, no cluster management |
 | Config-driven | All behavior in YAML/Rego | Same codebase, different configs per project |
 | Cloud-portable | Terraform + data sources + bootstrap script | Deploy to any AWS account in 10 min |

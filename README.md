@@ -3,11 +3,11 @@
 > Multi-format data curator agent. Turns raw files (PDF, CSV, JSON, HTML, audio, image, video) into an agent-readable knowledge base. Config-driven, cloud-portable, self-learning.
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Phase_1-yellow.svg)]()
-[![Cloud](https://img.shields.io/badge/Cloud-AWS-orange.svg)]()
-[![Region](https://img.shields.io/badge/Region-ap--south--1-yellow.svg)]()
-[![IaC](https://img.shields.io/badge/IaC-Terraform_≥1.9-7B42BC.svg)]()
-[![Python](https://img.shields.io/badge/Python-≥3.12-3776AB.svg)]()
+![Status](https://img.shields.io/badge/Status-Phase_1-yellow.svg)
+![Cloud](https://img.shields.io/badge/Cloud-AWS-orange.svg)
+![Region](https://img.shields.io/badge/Region-ap--south--1-yellow.svg)
+![IaC](https://img.shields.io/badge/IaC-Terraform_≥1.9-7B42BC.svg)
+![Python](https://img.shields.io/badge/Python-≥3.12-3776AB.svg)
 
 ---
 
@@ -81,7 +81,7 @@ Full architecture: see [`docs/architecture/00-overview.md`](docs/architecture/00
 ## What you'll find here
 
 | Area | Path |
-|---|---|
+| --- | --- |
 | **High-Level Design** | [`docs/architecture/01-hld.md`](docs/architecture/01-hld.md) |
 | **Low-Level Design** | [`docs/architecture/02-lld.md`](docs/architecture/02-lld.md) |
 | **Component diagram** | [`docs/architecture/03-component-diagram.md`](docs/architecture/03-component-diagram.md) |
@@ -135,7 +135,7 @@ mypy src
 ## Cost model (ap-south-1, per test run)
 
 | Component | Cost |
-|---|---|
+| --- | --- |
 | Lambda invocations | $0.001–0.005 |
 | Step Function transitions (~8 per job) | $0.0002 |
 | Bedrock Titan Embed v2 (1M tokens) | $0.02 |
