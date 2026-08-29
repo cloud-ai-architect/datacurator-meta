@@ -31,19 +31,15 @@ variable "name_prefix" {
   type = string
 }
 
+variable "github_subs" {
+  type = list(string)
+}
+
 variable "github_org" {
   type = string
 }
 
 variable "github_repo" {
-  type = string
-}
-
-variable "github_sub_main" {
-  type = string
-}
-
-variable "github_sub_pr" {
   type = string
 }
 
@@ -101,7 +97,7 @@ data "aws_iam_policy_document" "github_trust" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = [var.github_sub_main, var.github_sub_pr]
+      values   = var.github_subs
     }
   }
 }

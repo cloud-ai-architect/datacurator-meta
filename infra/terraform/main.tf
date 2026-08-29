@@ -48,8 +48,21 @@ module "iam" {
   name_prefix       = local.name_prefix
   github_org        = var.github_org
   github_repo       = var.github_repo
-  github_sub_main   = local.github_sub_main
-  github_sub_pr     = local.github_sub_pr
+  github_subs = [
+
+    local.github_sub_main,
+
+    local.github_sub_pr,
+
+    local.github_sub_env,
+
+    local.github_sub_main_plain,
+
+    local.github_sub_pr_plain,
+
+    local.github_sub_env_plain,
+
+  ]
   github_aud        = local.github_aud
   github_thumbprint = local.github_thumbprint
   buckets           = local.buckets
