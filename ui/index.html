@@ -95,6 +95,9 @@
 
   <div id="toast" class="toast"></div>
 
+  <!-- Written by Terraform with the deployed API Gateway URL, so the
+       bundle carries no hard-coded endpoint. Must load before app.js. -->
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

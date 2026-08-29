@@ -52,9 +52,16 @@ resource "aws_cloudfront_distribution" "this" {
   tags                = var.common_tags
 
   origin {
-    domain_name              = "${var.ui_bucket}.s3.amazonaws.com"
+    # Regional endpoint: the global "<bucket>.s3.amazonaws.com" form can
+    # redirect for non-us-east-1 buckets, which OAC signing does not follow.
+    domain_name              = "${var.ui_bucket}.s3.ap-south-1.amazonaws.com"
     origin_id                = "S3-${var.ui_bucket}"
     origin_access_control_id = aws_cloudfront_origin_access_control.this.id
+
+    # The site is published under the static/ prefix, but CloudFront asks the
+    # origin for default_root_object at the root ("/index.html"). Without
+    # this the distribution returned 403 for every request.
+    origin_path = "/static"
   }
 
   default_cache_behavior {
@@ -86,6 +93,39 @@ resource "aws_cloudfront_distribution" "this" {
   viewer_certificate {
     cloudfront_default_certificate = true
   }
+}
+
+# Grant this distribution — and only this distribution — read access to the
+# UI bucket.
+#
+# The bucket previously carried a public-read policy on static/*, which made
+# the OAC pointless: anyone could fetch objects directly from S3 and bypass
+# CloudFront entirely. Scoping to the CloudFront service principal with a
+# SourceArn condition is the actual OAC pattern, and it lets the bucket keep
+# public access fully blocked.
+#
+# The policy lives here rather than in the ui-bucket module because it needs
+# the distribution ARN, and putting it there would create a module cycle.
+resource "aws_s3_bucket_policy" "oac_read" {
+  bucket = var.ui_bucket
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowCloudFrontOACRead"
+        Effect    = "Allow"
+        Principal = { Service = "cloudfront.amazonaws.com" }
+        Action    = "s3:GetObject"
+        Resource  = "arn:aws:s3:::${var.ui_bucket}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.this.arn
+          }
+        }
+      }
+    ]
+  })
 }
 
 output "distribution_id" {

@@ -1,7 +1,7 @@
 ###############################################################################
 # S3 bucket for the KB UI (static website hosting).
-# This is the ONLY public bucket; the bucket policy allows public read on
-# the `static/` prefix only.
+# Private bucket. CloudFront reads it through Origin Access Control; there
+# is no public access path.
 ###############################################################################
 
 terraform {
@@ -32,10 +32,12 @@ resource "aws_s3_bucket" "this" {
 resource "aws_s3_bucket_public_access_block" "this" {
   bucket = aws_s3_bucket.this.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  # Nothing here is public any more: CloudFront reads via OAC using the
+  # bucket policy defined in the cloudfront module.
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 resource "aws_s3_bucket_versioning" "this" {
@@ -66,25 +68,6 @@ resource "aws_s3_bucket_website_configuration" "this" {
   error_document {
     key = "error.html"
   }
-}
-
-resource "aws_s3_bucket_policy" "public_static" {
-  bucket = aws_s3_bucket.this.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "PublicReadStaticOnly"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = "s3:GetObject"
-        Resource  = "arn:aws:s3:::${var.bucket_name}/static/*"
-      }
-    ]
-  })
-
-  depends_on = [aws_s3_bucket_public_access_block.this]
 }
 
 output "bucket_arn" {
