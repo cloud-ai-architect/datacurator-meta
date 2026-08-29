@@ -16,23 +16,23 @@ import future.keywords.contains
 # --- Pattern definitions ---
 # Each pattern matches a specific type of PII.
 
-aadhaar_pattern := r"\b\d{4}\s\d{4}\s\d{4}\b"
+aadhaar_pattern := `\b\d{4}\s\d{4}\s\d{4}\b`
 
-email_pattern := r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+email_pattern := `[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`
 
-phone_intl_pattern := r"\+\d{1,3}[\s-]?\d{3,5}[\s-]?\d{3,5}[\s-]?\d{3,5}"
+phone_intl_pattern := `\+\d{1,3}[\s-]?\d{3,5}[\s-]?\d{3,5}[\s-]?\d{3,5}`
 
-phone_in_pattern := r"\b\d{10}\b"
+phone_in_pattern := `\b\d{10}\b`
 
-ssn_pattern := r"\b\d{3}-\d{2}-\d{4}\b"
+ssn_pattern := `\b\d{3}-\d{2}-\d{4}\b`
 
-credit_card_pattern := r"\b(?:\d[ -]*?){13,19}\b"
+credit_card_pattern := `\b(?:\d[ -]*?){13,19}\b`
 
-ipv4_pattern := r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"
+ipv4_pattern := `\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b`
 
-pan_card_pattern := r"\b[A-Z]{5}\d{4}[A-Z]\b"
+pan_card_pattern := `\b[A-Z]{5}\d{4}[A-Z]\b`
 
-ifsc_pattern := r"\b[A-Z]{4}0[A-Z0-9]{6}\b"
+ifsc_pattern := `\b[A-Z]{4}0[A-Z0-9]{6}\b`
 
 # All patterns indexed by PII type
 pii_patterns := {
@@ -123,8 +123,15 @@ severity_order := {
   "high": 3,
 }
 
-highest(severities) := max if {
-  max := arg_max(s)
-  some s in severities
-  max := severity_order[s]
+# Returns the severity *name* with the highest rank, not its rank.
+#
+# The previous version called a non-existent arg_max builtin, referenced its
+# loop variable before binding it, and assigned the same variable twice, so
+# the policy never compiled -- which meant none of these tests had ever run.
+highest(severities) := name if {
+	ranks := {severity_order[s] | some s in severities}
+	top := max(ranks)
+	some name, rank in severity_order
+	rank == top
+	name in severities
 }
