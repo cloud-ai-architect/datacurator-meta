@@ -23,6 +23,7 @@ jobs:
   apply-dev:
     name: Apply to dev
     runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
     environment:
       name: dev
       url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

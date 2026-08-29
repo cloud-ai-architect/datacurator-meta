@@ -25,6 +25,7 @@ jobs:
   plan:
     name: Plan (dev)
     runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
     environment: dev  # uses environment-scoped secrets
     steps:
       - uses: actions/checkout@v4
