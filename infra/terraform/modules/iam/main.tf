@@ -179,6 +179,26 @@ data "aws_iam_policy_document" "github_actions_inline" {
     ]
   }
 
+  # The GitHub OIDC provider is account-wide and shared by every project, so
+  # it cannot be name-scoped. Terraform reads it on each apply to resolve the
+  # federated principal; without this, apply fails on
+  # GetOpenIDConnectProvider. Create/Delete are deliberately excluded -- the
+  # provider is bootstrapped once and a deploy role has no business removing
+  # it out from under the other stacks.
+  statement {
+    sid    = "ReadSharedOidcProvider"
+    effect = "Allow"
+
+    actions = [
+      "iam:GetOpenIDConnectProvider",
+      "iam:ListOpenIDConnectProviders",
+    ]
+
+    resources = [
+      "arn:aws:iam::*:oidc-provider/token.actions.githubusercontent.com",
+    ]
+  }
+
   # Deploy permissions for the services this stack uses.
   #
   # Scoped by service rather than by resource: Terraform must create
