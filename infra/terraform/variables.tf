@@ -40,7 +40,7 @@ variable "cost_center" {
 variable "github_org" {
   description = "GitHub organization or user that owns this repo"
   type        = string
-  default     = "vijaymadhu"
+  default     = "cloud-ai-architect"
 }
 
 variable "github_repo" {

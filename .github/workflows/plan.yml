@@ -51,8 +51,10 @@ jobs:
         run: |
           terraform init \
             -backend-config="bucket=datacurator-tfstate-dev" \
+            -backend-config="key=datacurator.tfstate" \
             -backend-config="region=ap-south-1" \
-            -backend-config="dynamodb_table=datacurator-tfstate-lock-dev"
+            -backend-config="dynamodb_table=datacurator-tfstate-lock-dev" \
+            -backend-config="encrypt=true"
 
       - name: Terraform plan
         id: plan
